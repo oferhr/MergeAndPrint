@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30413.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MergeAndPrint", "MergeAndPrint.csproj", "{500BECB1-6AA9-4129-A824-6445B9EFFC4E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{500BECB1-6AA9-4129-A824-6445B9EFFC4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{500BECB1-6AA9-4129-A824-6445B9EFFC4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{500BECB1-6AA9-4129-A824-6445B9EFFC4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{500BECB1-6AA9-4129-A824-6445B9EFFC4E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A099D148-5C2B-4A41-87F3-9AE9A720AB9B}
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 2
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://oferh.visualstudio.com/
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = MergeAndPrint.csproj
+		SccLocalPath1 = .
+	EndGlobalSection
+EndGlobal
