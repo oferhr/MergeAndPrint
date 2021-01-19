@@ -431,6 +431,7 @@ namespace MergeAndPrint
                     }
                     foreach (string s in dic.Keys)
                     {
+                        
                         logToScreen("מאחד קובץ - " + s + ".pdf");
                         var mergeName = s;
                         var arr = dic[s];
@@ -441,6 +442,7 @@ namespace MergeAndPrint
                         // var newdir = Path.GetDirectoryName(arr[0]);
                         var mergedPdfDocument = PdfDocument.Merge(pdfDocuments);
                         mergedPdfDocument.SaveAs(Path.Combine(txtPrint.Text, mergeName + ".pdf"));
+                        pdfDocuments = new List<PdfDocument>();
                     }
                 }
                 Directory.Delete(txtWorkFol.Text, true);
