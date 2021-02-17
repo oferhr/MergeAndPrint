@@ -113,6 +113,15 @@ namespace MergeAndPrint
                 cboPrinter3.SelectedIndex = counter1;
             }
 
+            updateDirectories();
+        }
+
+        private void updateDirectories()
+        {
+            chbox1.Items.Clear();
+            chbox2.Items.Clear();
+            chbox3.Items.Clear();
+
             if (!string.IsNullOrEmpty(txtMain.Text))
             {
                 var path1 = Path.Combine(txtMain.Text, "1");
@@ -152,8 +161,6 @@ namespace MergeAndPrint
                 timerCounter = int.Parse(timeVal);
             }
         }
-
-
 
 
         private void logToScreen(string message)
@@ -210,13 +217,14 @@ namespace MergeAndPrint
             Print(num);
             logToScreen("ממתין לספירה לאחור להסתיים");
             CountDown();
+            updateDirectories();
             //while (!isTimerFinnished)
             //{
-               
+
             //}
-           // Thread.Sleep(10000);
-            
-            
+            // Thread.Sleep(10000);
+
+
 
         }
         private void Clean()
@@ -330,13 +338,17 @@ namespace MergeAndPrint
                             Application.DoEvents();
                             if (ext.ToLower() == ".jpg" || ext.ToLower() == ".jpeg")
                             {
-                                ImageToPdfConverter.ImageToPdf(file, ImageBehavior.CropPage).SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
+                                var converted = IronPdf.ImageToPdfConverter.ImageToPdf(file);
+                                converted.SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
+                                //ImageToPdfConverter.ImageToPdf(file, ImageBehavior.CropPage).SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
                             }
                             else if (ext.ToLower() == ".tiff" || ext.ToLower() == ".tif")
                             {
-                                Image tiffImage = Image.FromFile(file);
-                                Image[] images = SplitTIFFImage(tiffImage);
-                                ImageToPdfConverter.ImageToPdf(images, ImageBehavior.CropPage).SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
+                                var converted = IronPdf.ImageToPdfConverter.ImageToPdf(file);
+                                converted.SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
+                                //Image tiffImage = Image.FromFile(file);
+                                //Image[] images = SplitTIFFImage(tiffImage);
+                                //ImageToPdfConverter.ImageToPdf(images, ImageBehavior.CropPage).SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
                             }
                             else if (ext.ToLower() == ".html" || ext.ToLower() == ".htm")
                             {
@@ -418,7 +430,7 @@ namespace MergeAndPrint
                     foreach (var lfile in lFiles)
                     {
                         files.Add(lfile);
-                        var fn = Path.GetFileNameWithoutExtension(lfile).Split('_')[0] + "_" + Path.GetFileNameWithoutExtension(lfile).Split('_')[1];
+                        var fn = Path.GetFileName(Path.GetDirectoryName(lfile)) + "-" + Path.GetFileNameWithoutExtension(lfile).Split('_')[0] + "_" + Path.GetFileNameWithoutExtension(lfile).Split('_')[1];
                         names.Add(fn);
                     }
                     var unique_items = new HashSet<string>(names);
@@ -426,7 +438,8 @@ namespace MergeAndPrint
                     var dic = new Dictionary<string, List<string>>();
                     foreach (string s in unique_items)
                     {
-                        var sorted = files.FindAll(f => f.Contains(s)).OrderBy(o => o).ToList();
+                        var fname = Path.GetFileNameWithoutExtension(s).Split('-')[1];
+                        var sorted = files.FindAll(f => f.Contains(fname)).OrderBy(o => o).ToList();
                         dic[s] = sorted;
                     }
                     foreach (string s in dic.Keys)
