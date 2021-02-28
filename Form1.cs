@@ -320,6 +320,7 @@ namespace MergeAndPrint
                     var dir = dirs[i];
                     logToScreen("מתחיל בהמרת קבצים בתיקיה  - " + Path.GetFileName(dir));
                     var lFiles = Directory.GetFiles(dir, "*.*", SearchOption.TopDirectoryOnly);
+                    files = new List<string>();
                     foreach (var lfile in lFiles)
                     {
                         files.Add(lfile);
