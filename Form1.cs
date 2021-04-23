@@ -233,6 +233,9 @@ namespace MergeAndPrint
             btn1.Enabled = true;
             btn2.Enabled = true;
             btn3.Enabled = true;
+            chbox1.Enabled = true;
+            chbox2.Enabled = true;
+            chbox3.Enabled = true;
             timerCounter = int.Parse(timeVal);
             Directory.Delete(txtPrint.Text, true);
             Directory.CreateDirectory(txtPrint.Text);
@@ -482,8 +485,8 @@ namespace MergeAndPrint
                 {
                     logToScreen("מדפיס קובץ  - " + Path.GetFileName(file));
                     Application.DoEvents();
-                    var pdf = PdfDocument.FromFile(file);
-                    pdf.Print(num == "1" ? Printer1 : num == "2" ? Printer2 : Printer3);
+                    //var pdf = PdfDocument.FromFile(file);
+                    //pdf.Print(num == "1" ? Printer1 : num == "2" ? Printer2 : Printer3);
                     Thread.Sleep(1000);
                     //var doc = pdf.GetPrintDocument();
                     //doc.EndPrint += Doc_EndPrint;
@@ -494,6 +497,7 @@ namespace MergeAndPrint
                 {
                     SimpleLogger.SimpleLog.Log(ex);
                     logToScreen("הדפסת קבצים נכשלה לקובץ - " + file);
+                    MessageBox.Show("הדפסת קבצים נכשלה לקובץ - " + file);
                 }
             }
            
@@ -783,17 +787,17 @@ namespace MergeAndPrint
             var sdirs = new List<string>();
             string num;
             CheckedListBox.CheckedItemCollection col;
-            if(chbox1.Items.Count > 0)
+            if(chbox1.CheckedItems.Count > 0)
             {
                 num = "1";
                 col = chbox1.CheckedItems;
             }
-            else if(chbox2.Items.Count > 0)
+            else if(chbox2.CheckedItems.Count > 0)
             {
                 num = "2";
                 col = chbox2.CheckedItems;
             }
-            else
+            else 
             {
                 num = "3";
                 col = chbox3.CheckedItems;
