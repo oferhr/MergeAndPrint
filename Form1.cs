@@ -19,6 +19,9 @@ namespace MergeAndPrint
         private  string Printer1;
         private  string Printer2;
         private  string Printer3;
+        private string Printer11;
+        private string Printer22;
+        private string Printer33;
         private System.Timers.Timer timer1;
         private int timerCounter = 30;
         private string timeVal;
@@ -33,6 +36,9 @@ namespace MergeAndPrint
             cboPrinter1.Items.AddRange(printers.ToArray());
             cboPrinter2.Items.AddRange(printers.ToArray());
             cboPrinter3.Items.AddRange(printers.ToArray());
+            cboPrinter11.Items.AddRange(printers.ToArray());
+            cboPrinter22.Items.AddRange(printers.ToArray());
+            cboPrinter33.Items.AddRange(printers.ToArray());
 
             timeVal = Properties.Settings.Default.TimerPeriod;
             if (!string.IsNullOrEmpty(timeVal))
@@ -112,6 +118,51 @@ namespace MergeAndPrint
                 }
                 cboPrinter3.SelectedIndex = counter1;
             }
+            var dirPrinter11 = Properties.Settings.Default.Printer22;
+            if (!string.IsNullOrEmpty(dirPrinter11))
+            {
+                Printer11 = dirPrinter11;
+                counter = 0;
+                counter1 = 0;
+                foreach (var printer in PrinterSettings.InstalledPrinters)
+                {
+                    if (printer.ToString() == dirPrinter11)
+                        counter1 = counter;
+
+                    counter++;
+                }
+                cboPrinter11.SelectedIndex = counter1;
+            }
+            var dirPrinter22 = Properties.Settings.Default.Printer22;
+            if (!string.IsNullOrEmpty(dirPrinter22))
+            {
+                Printer22 = dirPrinter22;
+                counter = 0;
+                counter1 = 0;
+                foreach (var printer in PrinterSettings.InstalledPrinters)
+                {
+                    if (printer.ToString() == dirPrinter22)
+                        counter1 = counter;
+
+                    counter++;
+                }
+                cboPrinter22.SelectedIndex = counter1;
+            }
+            var dirPrinter33 = Properties.Settings.Default.Printer33;
+            if (!string.IsNullOrEmpty(dirPrinter33))
+            {
+                Printer33 = dirPrinter33;
+                counter = 0;
+                counter1 = 0;
+                foreach (var printer in PrinterSettings.InstalledPrinters)
+                {
+                    if (printer.ToString() == dirPrinter33)
+                        counter1 = counter;
+
+                    counter++;
+                }
+                cboPrinter33.SelectedIndex = counter1;
+            }
 
             updateDirectories();
         }
@@ -158,6 +209,51 @@ namespace MergeAndPrint
                         chbox3.Items.Add(dir);
                     }
                 }
+                path1 = Path.Combine(txtMain.Text, "1_999");
+                if (Directory.Exists(path1))
+                {
+                    dirInfo = new DirectoryInfo(path1);
+                    var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
+                    lb11.Text = lDir.Count() + " ספקים ";
+                    //foreach (var dir in lDir)
+                    //{
+                    //    chbox3.Items.Add(dir);
+                    //}
+                }
+                else
+                {
+                    lb11.Text =  " 0 ספקים ";
+                }
+                path1 = Path.Combine(txtMain.Text, "2_999");
+                if (Directory.Exists(path1))
+                {
+                    dirInfo = new DirectoryInfo(path1);
+                    var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
+                    lb22.Text = lDir.Count() + " ספקים ";
+                    //foreach (var dir in lDir)
+                    //{
+                    //    chbox3.Items.Add(dir);
+                    //}
+                }
+                else
+                {
+                    lb22.Text = " 0 ספקים ";
+                }
+                path1 = Path.Combine(txtMain.Text, "3_999");
+                if (Directory.Exists(path1))
+                {
+                    dirInfo = new DirectoryInfo(path1);
+                    var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
+                    lb33.Text = lDir.Count() + " ספקים ";
+                    //foreach (var dir in lDir)
+                    //{
+                    //    chbox3.Items.Add(dir);
+                    //}
+                }
+                else
+                {
+                    lb33.Text = " 0 ספקים ";
+                }
                 timerCounter = int.Parse(timeVal);
             }
         }
@@ -185,12 +281,32 @@ namespace MergeAndPrint
             string num = "3";
             Start(num, null);
         }
+        private void btn11_Click(object sender, EventArgs e)
+        {
+            string num = "1_999";
+            Start(num, null);
+        }
+
+        private void btn22_Click(object sender, EventArgs e)
+        {
+            string num = "2_999";
+            Start(num, null);
+        }
+
+        private void btn33_Click(object sender, EventArgs e)
+        {
+            string num = "3_999";
+            Start(num, null);
+        }
         private void Start(string num, List<string> sdirs)
         {
             btn1.Enabled = false;
             btn2.Enabled = false;
             btn3.Enabled = false;
-           // isTimerFinnished = false;
+            btn11.Enabled = false;
+            btn22.Enabled = false;
+            btn33.Enabled = false;
+            // isTimerFinnished = false;
             if (!CheckProgress())
             {
                 return;
@@ -321,6 +437,15 @@ namespace MergeAndPrint
                 for (int i = 0; i < dirs.Length; i++)
                 {
                     var dir = dirs[i];
+                    if (!num.EndsWith("999") && Path.GetFileName(dir).StartsWith("999_"))
+                    {
+                        if (!Directory.Exists(Path.Combine(txtMain.Text, num.ToString()+"_999")))
+                        {
+                            Directory.CreateDirectory(Path.Combine(txtMain.Text, num.ToString() + "_999"));
+                        }
+                        Directory.Move(dir, Path.Combine(Path.Combine(txtMain.Text, num.ToString() + "_999"), Path.GetFileName(dir)));
+                        continue;
+                    }
                     logToScreen("מתחיל בהמרת קבצים בתיקיה  - " + Path.GetFileName(dir));
                     var lFiles = Directory.GetFiles(dir, "*.*", SearchOption.TopDirectoryOnly);
                     files = new List<string>();
@@ -483,10 +608,35 @@ namespace MergeAndPrint
             {
                 try
                 {
+                    var pprint = string.Empty;
+                    switch (num)
+                    {
+                        case "1":
+                            pprint = Printer1;
+                            break;
+                        case "2":
+                            pprint = Printer2;
+                            break;
+                        case "3":
+                            pprint = Printer3;
+                            break;
+                        case "1_999":
+                            pprint = Printer11;
+                            break;
+                        case "2_999":
+                            pprint = Printer22;
+                            break;
+                        case "3_999":
+                            pprint = Printer33;
+                            break;
+                        default:
+                            pprint = Printer1;
+                            break;
+                    }
                     logToScreen("מדפיס קובץ  - " + Path.GetFileName(file));
                     Application.DoEvents();
-                    //var pdf = PdfDocument.FromFile(file);
-                    //pdf.Print(num == "1" ? Printer1 : num == "2" ? Printer2 : Printer3);
+                    var pdf = PdfDocument.FromFile(file);
+                    pdf.Print(pprint);
                     Thread.Sleep(1000);
                     //var doc = pdf.GetPrintDocument();
                     //doc.EndPrint += Doc_EndPrint;
@@ -815,6 +965,27 @@ namespace MergeAndPrint
         private void button1_Click(object sender, EventArgs e)
         {
             this.Close();
+        }
+
+        private void cboPrinter11_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.Printer11 = cboPrinter11.SelectedItem.ToString();
+            Properties.Settings.Default.Save();
+            Printer11 = cboPrinter11.SelectedItem.ToString();
+        }
+
+        private void cboPrinter22_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.Printer22 = cboPrinter22.SelectedItem.ToString();
+            Properties.Settings.Default.Save();
+            Printer22 = cboPrinter22.SelectedItem.ToString();
+        }
+
+        private void cboPrinter33_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.Printer33 = cboPrinter33.SelectedItem.ToString();
+            Properties.Settings.Default.Save();
+            Printer33 = cboPrinter33.SelectedItem.ToString();
         }
     }
 

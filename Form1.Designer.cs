@@ -30,6 +30,7 @@
         {
             this.tabMain = new System.Windows.Forms.TabControl();
             this.tmain = new System.Windows.Forms.TabPage();
+            this.lblTime = new System.Windows.Forms.Label();
             this.lblCountDown = new System.Windows.Forms.Label();
             this.txtDetails = new System.Windows.Forms.RichTextBox();
             this.lb2 = new System.Windows.Forms.Label();
@@ -67,9 +68,20 @@
             this.btnBrowse = new System.Windows.Forms.Button();
             this.txtMain = new System.Windows.Forms.TextBox();
             this.lbl1 = new System.Windows.Forms.Label();
-            this.lblTime = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
+            this.btn11 = new System.Windows.Forms.Button();
+            this.btn33 = new System.Windows.Forms.Button();
+            this.btn22 = new System.Windows.Forms.Button();
+            this.cboPrinter33 = new System.Windows.Forms.ComboBox();
+            this.cboPrinter22 = new System.Windows.Forms.ComboBox();
+            this.cboPrinter11 = new System.Windows.Forms.ComboBox();
+            this.label9 = new System.Windows.Forms.Label();
+            this.label10 = new System.Windows.Forms.Label();
+            this.label11 = new System.Windows.Forms.Label();
+            this.lb11 = new System.Windows.Forms.Label();
+            this.lb33 = new System.Windows.Forms.Label();
+            this.lb22 = new System.Windows.Forms.Label();
             this.tabMain.SuspendLayout();
             this.tmain.SuspendLayout();
             this.tprint.SuspendLayout();
@@ -98,6 +110,12 @@
             // tmain
             // 
             this.tmain.BackColor = System.Drawing.Color.WhiteSmoke;
+            this.tmain.Controls.Add(this.lb22);
+            this.tmain.Controls.Add(this.lb33);
+            this.tmain.Controls.Add(this.lb11);
+            this.tmain.Controls.Add(this.btn22);
+            this.tmain.Controls.Add(this.btn33);
+            this.tmain.Controls.Add(this.btn11);
             this.tmain.Controls.Add(this.lblTime);
             this.tmain.Controls.Add(this.lblCountDown);
             this.tmain.Controls.Add(this.txtDetails);
@@ -114,6 +132,18 @@
             this.tmain.Size = new System.Drawing.Size(730, 566);
             this.tmain.TabIndex = 0;
             this.tmain.Text = "ראשי";
+            // 
+            // lblTime
+            // 
+            this.lblTime.AutoSize = true;
+            this.lblTime.Font = new System.Drawing.Font("Arial", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.lblTime.ForeColor = System.Drawing.Color.DarkBlue;
+            this.lblTime.Location = new System.Drawing.Point(388, 306);
+            this.lblTime.Name = "lblTime";
+            this.lblTime.Size = new System.Drawing.Size(105, 29);
+            this.lblTime.TabIndex = 15;
+            this.lblTime.Text = "זמן נשאר";
+            this.lblTime.Visible = false;
             // 
             // lblCountDown
             // 
@@ -141,7 +171,7 @@
             // 
             this.lb2.AutoSize = true;
             this.lb2.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.lb2.Location = new System.Drawing.Point(292, 149);
+            this.lb2.Location = new System.Drawing.Point(415, 149);
             this.lb2.Name = "lb2";
             this.lb2.Size = new System.Drawing.Size(101, 19);
             this.lb2.TabIndex = 9;
@@ -151,7 +181,7 @@
             // 
             this.lb3.AutoSize = true;
             this.lb3.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.lb3.Location = new System.Drawing.Point(292, 239);
+            this.lb3.Location = new System.Drawing.Point(415, 239);
             this.lb3.Name = "lb3";
             this.lb3.Size = new System.Drawing.Size(101, 19);
             this.lb3.TabIndex = 8;
@@ -161,7 +191,7 @@
             // 
             this.lb1.AutoSize = true;
             this.lb1.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.lb1.Location = new System.Drawing.Point(292, 65);
+            this.lb1.Location = new System.Drawing.Point(415, 65);
             this.lb1.Name = "lb1";
             this.lb1.Size = new System.Drawing.Size(101, 19);
             this.lb1.TabIndex = 6;
@@ -169,7 +199,7 @@
             // 
             // btn2
             // 
-            this.btn2.Location = new System.Drawing.Point(445, 140);
+            this.btn2.Location = new System.Drawing.Point(522, 140);
             this.btn2.Name = "btn2";
             this.btn2.Size = new System.Drawing.Size(186, 39);
             this.btn2.TabIndex = 3;
@@ -179,7 +209,7 @@
             // 
             // btn3
             // 
-            this.btn3.Location = new System.Drawing.Point(445, 230);
+            this.btn3.Location = new System.Drawing.Point(522, 230);
             this.btn3.Name = "btn3";
             this.btn3.Size = new System.Drawing.Size(186, 39);
             this.btn3.TabIndex = 2;
@@ -189,7 +219,7 @@
             // 
             // btn1
             // 
-            this.btn1.Location = new System.Drawing.Point(445, 56);
+            this.btn1.Location = new System.Drawing.Point(522, 56);
             this.btn1.Name = "btn1";
             this.btn1.Size = new System.Drawing.Size(186, 39);
             this.btn1.TabIndex = 1;
@@ -301,6 +331,12 @@
             // tconfig
             // 
             this.tconfig.BackColor = System.Drawing.Color.WhiteSmoke;
+            this.tconfig.Controls.Add(this.cboPrinter33);
+            this.tconfig.Controls.Add(this.cboPrinter22);
+            this.tconfig.Controls.Add(this.cboPrinter11);
+            this.tconfig.Controls.Add(this.label9);
+            this.tconfig.Controls.Add(this.label10);
+            this.tconfig.Controls.Add(this.label11);
             this.tconfig.Controls.Add(this.txtTimer);
             this.tconfig.Controls.Add(this.label7);
             this.tconfig.Controls.Add(this.bArchive);
@@ -329,7 +365,7 @@
             // 
             // txtTimer
             // 
-            this.txtTimer.Location = new System.Drawing.Point(418, 426);
+            this.txtTimer.Location = new System.Drawing.Point(418, 497);
             this.txtTimer.Name = "txtTimer";
             this.txtTimer.Size = new System.Drawing.Size(100, 26);
             this.txtTimer.TabIndex = 24;
@@ -338,7 +374,7 @@
             // 
             this.label7.AutoSize = true;
             this.label7.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.label7.Location = new System.Drawing.Point(561, 425);
+            this.label7.Location = new System.Drawing.Point(561, 496);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(158, 19);
             this.label7.TabIndex = 23;
@@ -509,18 +545,6 @@
             this.lbl1.TabIndex = 5;
             this.lbl1.Text = "תקייה ראשית";
             // 
-            // lblTime
-            // 
-            this.lblTime.AutoSize = true;
-            this.lblTime.Font = new System.Drawing.Font("Arial", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.lblTime.ForeColor = System.Drawing.Color.DarkBlue;
-            this.lblTime.Location = new System.Drawing.Point(388, 306);
-            this.lblTime.Name = "lblTime";
-            this.lblTime.Size = new System.Drawing.Size(105, 29);
-            this.lblTime.TabIndex = 15;
-            this.lblTime.Text = "זמן נשאר";
-            this.lblTime.Visible = false;
-            // 
             // label8
             // 
             this.label8.AutoSize = true;
@@ -542,6 +566,123 @@
             this.button1.Text = "סגור";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // btn11
+            // 
+            this.btn11.Location = new System.Drawing.Point(182, 56);
+            this.btn11.Name = "btn11";
+            this.btn11.Size = new System.Drawing.Size(186, 39);
+            this.btn11.TabIndex = 16;
+            this.btn11.Text = "עותק 1 מקביל";
+            this.btn11.UseVisualStyleBackColor = true;
+            this.btn11.Click += new System.EventHandler(this.btn11_Click);
+            // 
+            // btn33
+            // 
+            this.btn33.Location = new System.Drawing.Point(182, 230);
+            this.btn33.Name = "btn33";
+            this.btn33.Size = new System.Drawing.Size(186, 39);
+            this.btn33.TabIndex = 17;
+            this.btn33.Text = "עותק 3 מקביל";
+            this.btn33.UseVisualStyleBackColor = true;
+            this.btn33.Click += new System.EventHandler(this.btn33_Click);
+            // 
+            // btn22
+            // 
+            this.btn22.Location = new System.Drawing.Point(182, 140);
+            this.btn22.Name = "btn22";
+            this.btn22.Size = new System.Drawing.Size(186, 39);
+            this.btn22.TabIndex = 18;
+            this.btn22.Text = "עותק 2 מקביל";
+            this.btn22.UseVisualStyleBackColor = true;
+            this.btn22.Click += new System.EventHandler(this.btn22_Click);
+            // 
+            // cboPrinter33
+            // 
+            this.cboPrinter33.FormattingEnabled = true;
+            this.cboPrinter33.Location = new System.Drawing.Point(272, 441);
+            this.cboPrinter33.Name = "cboPrinter33";
+            this.cboPrinter33.Size = new System.Drawing.Size(246, 26);
+            this.cboPrinter33.TabIndex = 30;
+            this.cboPrinter33.SelectedIndexChanged += new System.EventHandler(this.cboPrinter33_SelectedIndexChanged);
+            // 
+            // cboPrinter22
+            // 
+            this.cboPrinter22.FormattingEnabled = true;
+            this.cboPrinter22.Location = new System.Drawing.Point(272, 396);
+            this.cboPrinter22.Name = "cboPrinter22";
+            this.cboPrinter22.Size = new System.Drawing.Size(246, 26);
+            this.cboPrinter22.TabIndex = 29;
+            this.cboPrinter22.SelectedIndexChanged += new System.EventHandler(this.cboPrinter22_SelectedIndexChanged);
+            // 
+            // cboPrinter11
+            // 
+            this.cboPrinter11.FormattingEnabled = true;
+            this.cboPrinter11.Location = new System.Drawing.Point(272, 354);
+            this.cboPrinter11.Name = "cboPrinter11";
+            this.cboPrinter11.Size = new System.Drawing.Size(246, 26);
+            this.cboPrinter11.TabIndex = 28;
+            this.cboPrinter11.SelectedIndexChanged += new System.EventHandler(this.cboPrinter11_SelectedIndexChanged);
+            // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.label9.Location = new System.Drawing.Point(552, 444);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(167, 19);
+            this.label9.TabIndex = 27;
+            this.label9.Text = "מדפסת לכפתור 3 מקביל";
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.label10.Location = new System.Drawing.Point(552, 396);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(167, 19);
+            this.label10.TabIndex = 26;
+            this.label10.Text = "מדפסת לכפתור 2 מקביל";
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.label11.Location = new System.Drawing.Point(552, 354);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(167, 19);
+            this.label11.TabIndex = 25;
+            this.label11.Text = "מדפסת לכפתור 1 מקביל";
+            // 
+            // lb11
+            // 
+            this.lb11.AutoSize = true;
+            this.lb11.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.lb11.Location = new System.Drawing.Point(59, 65);
+            this.lb11.Name = "lb11";
+            this.lb11.Size = new System.Drawing.Size(101, 19);
+            this.lb11.TabIndex = 19;
+            this.lb11.Text = "כמות ספקים 1";
+            // 
+            // lb33
+            // 
+            this.lb33.AutoSize = true;
+            this.lb33.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.lb33.Location = new System.Drawing.Point(59, 239);
+            this.lb33.Name = "lb33";
+            this.lb33.Size = new System.Drawing.Size(101, 19);
+            this.lb33.TabIndex = 20;
+            this.lb33.Text = "כמות ספקים 1";
+            // 
+            // lb22
+            // 
+            this.lb22.AutoSize = true;
+            this.lb22.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.lb22.Location = new System.Drawing.Point(59, 149);
+            this.lb22.Name = "lb22";
+            this.lb22.Size = new System.Drawing.Size(101, 19);
+            this.lb22.TabIndex = 21;
+            this.lb22.Text = "כמות ספקים 1";
             // 
             // Form1
             // 
@@ -613,6 +754,18 @@
         private System.Windows.Forms.Label lblTime;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button btn11;
+        private System.Windows.Forms.Button btn22;
+        private System.Windows.Forms.Button btn33;
+        private System.Windows.Forms.ComboBox cboPrinter33;
+        private System.Windows.Forms.ComboBox cboPrinter22;
+        private System.Windows.Forms.ComboBox cboPrinter11;
+        private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.Label label10;
+        private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.Label lb22;
+        private System.Windows.Forms.Label lb33;
+        private System.Windows.Forms.Label lb11;
     }
 }
 

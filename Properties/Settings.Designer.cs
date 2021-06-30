@@ -118,5 +118,41 @@ namespace MergeAndPrint.Properties {
                 this["TimerPeriod"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Printer11 {
+            get {
+                return ((string)(this["Printer11"]));
+            }
+            set {
+                this["Printer11"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Printer22 {
+            get {
+                return ((string)(this["Printer22"]));
+            }
+            set {
+                this["Printer22"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Printer33 {
+            get {
+                return ((string)(this["Printer33"]));
+            }
+            set {
+                this["Printer33"] = value;
+            }
+        }
     }
 }
