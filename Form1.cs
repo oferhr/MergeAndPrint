@@ -200,7 +200,7 @@ namespace MergeAndPrint
                 }
                 
             }
-            txtDetails.Clear();
+            //txtDetails.Clear();
             updateScreen();
             updateDirectories();
             Clean();
