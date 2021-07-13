@@ -16,22 +16,23 @@ namespace MergeAndPrint
 {
     public partial class Form1 : Form
     {
-        private  string Printer1;
-        private  string Printer2;
-        private  string Printer3;
+        private string Printer1;
+        private string Printer2;
+        private string Printer3;
         private string Printer11;
         private string Printer22;
         private string Printer33;
         private System.Timers.Timer timer1;
         private int timerCounter = 30;
         private string timeVal;
+        private string CurrentDirectory = null;
         public Form1()
         {
             InitializeComponent();
 
-           
-           // timerCounter = WaitSeconds;
-
+            
+             
+           // int.TryParse(ConfigurationManager.AppSettings["WaitSeconds"].ToString(), out timerCounter);
             var printers = GetAllPrinterList();
             cboPrinter1.Items.AddRange(printers.ToArray());
             cboPrinter2.Items.AddRange(printers.ToArray());
@@ -73,7 +74,7 @@ namespace MergeAndPrint
             }
 
             var dirPrinter1 = Properties.Settings.Default.Printer1;
-            var counter = 0; 
+            var counter = 0;
             var counter1 = 0;
             if (!string.IsNullOrEmpty(dirPrinter1))
             {
@@ -101,7 +102,7 @@ namespace MergeAndPrint
                     counter++;
                 }
                 cboPrinter2.SelectedIndex = counter1;
-                
+
             }
             var dirPrinter3 = Properties.Settings.Default.Printer3;
             if (!string.IsNullOrEmpty(dirPrinter3))
@@ -164,14 +165,89 @@ namespace MergeAndPrint
                 cboPrinter33.SelectedIndex = counter1;
             }
 
+
+            updateScreen();
             updateDirectories();
         }
-
-        private void updateDirectories()
+        private void updateScreen()
         {
+            lstFolder.Items.Clear();
+            var col = updateDirectories();
+            for (var i = 0; i < col.Count; i++)
+            {
+                col[i] = "תקיה " + col[i];
+            }
+            lstFolder.Items.AddRange(col.ToArray());
             chbox1.Items.Clear();
-            chbox2.Items.Clear();
-            chbox3.Items.Clear();
+        }
+        private void btnReset_Click(object sender, EventArgs e)
+        {
+            var nums = new string[] { "1", "2", "3" };
+            foreach (var num in nums)
+            {
+                var path = Path.Combine(txtMain.Text, num);
+                var dirs = Directory.GetDirectories(path);
+                foreach (var dir in dirs)
+                {
+                    if (Path.GetFileName(dir).StartsWith("999_"))
+                    {
+                        if (!Directory.Exists(Path.Combine(txtMain.Text, num.ToString() + "_999")))
+                        {
+                            Directory.CreateDirectory(Path.Combine(txtMain.Text, num.ToString() + "_999"));
+                        }
+                        Directory.Move(dir, Path.Combine(Path.Combine(txtMain.Text, num.ToString() + "_999"), Path.GetFileName(dir)));
+                    }
+                }
+                
+            }
+            txtDetails.Clear();
+            updateScreen();
+            updateDirectories();
+            Clean();
+        }
+        private void lstFolder_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            string num;
+            chbox1.Items.Clear();
+            var item = lstFolder.SelectedItem;
+            if (item.ToString().Contains("תקיה " + "1_999"))
+            {
+                num = "1_999";
+            }
+            else if (item.ToString().Contains("תקיה " + "2_999"))
+            {
+                num = "2_999";
+            }
+            else if (item.ToString().Contains("תקיה " + "3_999"))
+            {
+                num = "3_999";
+            }
+            else if (item.ToString().Contains("תקיה " + "1"))
+            {
+                num = "1";
+            }
+            else if (item.ToString().Contains("תקיה " + "2"))
+            {
+                num = "2";
+            }
+            else
+            {
+                num = "3";
+            }
+            CurrentDirectory = num;
+            var dirInfo = new DirectoryInfo(Path.Combine(txtMain.Text, num));
+            var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
+            foreach (var dir in lDir)
+            {
+                chbox1.Items.Add(dir);
+            }
+            groupBox1.Text = "תקיה " + num;
+        }
+        private List<string> updateDirectories()
+        {
+            var dirInfos = new List<string>();
+            chbox1.Items.Clear();
+           
 
             if (!string.IsNullOrEmpty(txtMain.Text))
             {
@@ -182,10 +258,8 @@ namespace MergeAndPrint
                     dirInfo = new DirectoryInfo(path1);
                     var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
                     lb1.Text = lDir.Count() + " ספקים ";
-                    foreach (var dir in lDir)
-                    {
-                        chbox1.Items.Add(dir);
-                    }
+                    dirInfos.Add("1 - " + lb1.Text);
+                   
                 }
                 path1 = Path.Combine(txtMain.Text, "2");
                 if (Directory.Exists(path1))
@@ -193,10 +267,8 @@ namespace MergeAndPrint
                     dirInfo = new DirectoryInfo(path1);
                     var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
                     lb2.Text = lDir.Count() + " ספקים ";
-                    foreach (var dir in lDir)
-                    {
-                        chbox2.Items.Add(dir);
-                    }
+                    dirInfos.Add("2 - " + lb2.Text);
+                    
                 }
                 path1 = Path.Combine(txtMain.Text, "3");
                 if (Directory.Exists(path1))
@@ -204,10 +276,8 @@ namespace MergeAndPrint
                     dirInfo = new DirectoryInfo(path1);
                     var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
                     lb3.Text = lDir.Count() + " ספקים ";
-                    foreach (var dir in lDir)
-                    {
-                        chbox3.Items.Add(dir);
-                    }
+                    dirInfos.Add("3 - " + lb3.Text);
+                    
                 }
                 path1 = Path.Combine(txtMain.Text, "1_999");
                 if (Directory.Exists(path1))
@@ -215,14 +285,12 @@ namespace MergeAndPrint
                     dirInfo = new DirectoryInfo(path1);
                     var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
                     lb11.Text = lDir.Count() + " ספקים ";
-                    //foreach (var dir in lDir)
-                    //{
-                    //    chbox3.Items.Add(dir);
-                    //}
+                    dirInfos.Add("1_999 - " + lb11.Text);
+                  
                 }
                 else
                 {
-                    lb11.Text =  " 0 ספקים ";
+                    lb11.Text = " 0 ספקים ";
                 }
                 path1 = Path.Combine(txtMain.Text, "2_999");
                 if (Directory.Exists(path1))
@@ -230,10 +298,8 @@ namespace MergeAndPrint
                     dirInfo = new DirectoryInfo(path1);
                     var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
                     lb22.Text = lDir.Count() + " ספקים ";
-                    //foreach (var dir in lDir)
-                    //{
-                    //    chbox3.Items.Add(dir);
-                    //}
+                    dirInfos.Add("2_999 - " + lb22.Text);
+                   
                 }
                 else
                 {
@@ -245,17 +311,21 @@ namespace MergeAndPrint
                     dirInfo = new DirectoryInfo(path1);
                     var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
                     lb33.Text = lDir.Count() + " ספקים ";
-                    //foreach (var dir in lDir)
-                    //{
-                    //    chbox3.Items.Add(dir);
-                    //}
+                    dirInfos.Add("3_999 - " + lb33.Text);
+                   
                 }
                 else
                 {
                     lb33.Text = " 0 ספקים ";
                 }
-                timerCounter = int.Parse(timeVal);
+                if (!string.IsNullOrEmpty(timeVal))
+                {
+                    timerCounter = int.Parse(timeVal);
+                }
+                
+
             }
+            return dirInfos;
         }
 
 
@@ -300,23 +370,28 @@ namespace MergeAndPrint
         }
         private void Start(string num, List<string> sdirs)
         {
+            if (!CheckProgress())
+            {
+                return;
+            }
             btn1.Enabled = false;
             btn2.Enabled = false;
             btn3.Enabled = false;
             btn11.Enabled = false;
             btn22.Enabled = false;
             btn33.Enabled = false;
+            btnReset.Enabled = false;
+            Directory.Delete(txtPrint.Text, true);
+            Directory.CreateDirectory(txtPrint.Text);
             // isTimerFinnished = false;
-            if (!CheckProgress())
-            {
-                return;
-            }
+
+
             logToScreen("מתחיל בתהליך");
             logToScreen("מעתיק קבצים לארכיון...");
             archive(num, sdirs);
             logToScreen("מעתיק קבצים לתקיה זמנית...");
             SendToWorkingFolder(num, sdirs);
-            logToScreen("מתחיל בהמרת הקבציםץץץ");
+            logToScreen("מתחיל בהמרת הקבצים...");
             if (!Convert(num, sdirs))
             {
                 MessageBox.Show("הפעולה נכשלה, יש לבחון קובץ לוג");
@@ -349,9 +424,10 @@ namespace MergeAndPrint
             btn1.Enabled = true;
             btn2.Enabled = true;
             btn3.Enabled = true;
+            btn11.Enabled = true;
+            btn22.Enabled = true;
+            btn33.Enabled = true;
             chbox1.Enabled = true;
-            chbox2.Enabled = true;
-            chbox3.Enabled = true;
             timerCounter = int.Parse(timeVal);
             Directory.Delete(txtPrint.Text, true);
             Directory.CreateDirectory(txtPrint.Text);
@@ -385,7 +461,8 @@ namespace MergeAndPrint
                             lblTime.Visible = false;
                             lblCountDown.Text = string.Empty;
                             logToScreen("מנקה את סביבת העבודה");
-                            Clean();
+                            btnReset.Enabled = true;
+                            updateScreen();
                             MessageBox.Show("הפעולה הסתיימה בהצלחה");
                         }));
                     }
@@ -394,10 +471,11 @@ namespace MergeAndPrint
                         lblTime.Visible = false;
                         lblCountDown.Text = string.Empty;
                         logToScreen("מנקה את סביבת העבודה");
-                        Clean();
+                        btnReset.Enabled = true;
+                        updateScreen();
                         MessageBox.Show("הפעולה הסתיימה בהצלחה");
                     }
-                    
+
 
                 }
             };
@@ -409,7 +487,7 @@ namespace MergeAndPrint
             Application.DoEvents();
         }
 
-       
+
         private bool Convert(string num, List<string> sdirs)
         {
             try
@@ -439,7 +517,7 @@ namespace MergeAndPrint
                     var dir = dirs[i];
                     if (!num.EndsWith("999") && Path.GetFileName(dir).StartsWith("999_"))
                     {
-                        if (!Directory.Exists(Path.Combine(txtMain.Text, num.ToString()+"_999")))
+                        if (!Directory.Exists(Path.Combine(txtMain.Text, num.ToString() + "_999")))
                         {
                             Directory.CreateDirectory(Path.Combine(txtMain.Text, num.ToString() + "_999"));
                         }
@@ -512,7 +590,7 @@ namespace MergeAndPrint
                             logToScreen("הפעולה תסתיים");
                             return false;
                         }
-                        
+
                     }
                 }
                 return true;
@@ -524,7 +602,7 @@ namespace MergeAndPrint
                 logToScreen("הפעולה תסתיים");
                 return false;
             }
-            
+
         }
         private bool Merge(string num, List<string> sdirs)
         {
@@ -573,7 +651,7 @@ namespace MergeAndPrint
                     }
                     foreach (string s in dic.Keys)
                     {
-                        
+
                         logToScreen("מאחד קובץ - " + s + ".pdf");
                         var mergeName = s;
                         var arr = dic[s];
@@ -650,8 +728,8 @@ namespace MergeAndPrint
                     MessageBox.Show("הדפסת קבצים נכשלה לקובץ - " + file);
                 }
             }
-           
-                
+
+
         }
 
         //private void Doc_EndPrint(object sender, PrintEventArgs e)
@@ -659,7 +737,7 @@ namespace MergeAndPrint
         //    throw new NotImplementedException();
         //}
 
-        private  Image[] SplitTIFFImage(Image tiffImage)
+        private Image[] SplitTIFFImage(Image tiffImage)
         {
             int frameCount = tiffImage.GetFrameCount(FrameDimension.Page);
             Image[] images = new Image[frameCount];
@@ -765,11 +843,11 @@ namespace MergeAndPrint
             // Copy each subdirectory using recursion.
             foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
             {
-                DirectoryInfo nextTargetSubDir =   target.CreateSubdirectory(diSourceSubDir.Name);
+                DirectoryInfo nextTargetSubDir = target.CreateSubdirectory(diSourceSubDir.Name);
                 CopyFolder(diSourceSubDir, nextTargetSubDir);
             }
         }
- 
+
         private List<string> GetAllPrinterList()
         {
             var _prntrs = new List<string>();
@@ -848,7 +926,7 @@ namespace MergeAndPrint
         {
             Properties.Settings.Default.Printer2 = cboPrinter2.SelectedItem.ToString();
             Properties.Settings.Default.Save();
-            Printer2= cboPrinter2.SelectedItem.ToString();
+            Printer2 = cboPrinter2.SelectedItem.ToString();
         }
 
         private void cboPrinter3_SelectedIndexChanged(object sender, EventArgs e)
@@ -874,7 +952,7 @@ namespace MergeAndPrint
         }
         private bool CheckProgress()
         {
-            if(string.IsNullOrEmpty(txtArchive.Text) || string.IsNullOrEmpty(txtMain.Text) || string.IsNullOrEmpty(txtPrint.Text) || string.IsNullOrEmpty(txtWorkFol.Text) || string.IsNullOrEmpty(txtTimer.Text))
+            if (string.IsNullOrEmpty(txtArchive.Text) || string.IsNullOrEmpty(txtMain.Text) || string.IsNullOrEmpty(txtPrint.Text) || string.IsNullOrEmpty(txtWorkFol.Text) || string.IsNullOrEmpty(txtTimer.Text))
             {
                 MessageBox.Show("פרטים חסרים בלשונית קונפיגורציה");
                 return false;
@@ -884,80 +962,34 @@ namespace MergeAndPrint
             return true;
         }
 
-        private void chbox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if(chbox1.CheckedItems.Count > 0)
-            {
-                chbox2.Enabled = false;
-                chbox3.Enabled = false;
-            }
-            else
-            {
-                chbox2.Enabled = true;
-                chbox3.Enabled = true;
-            }
-        }
-
-        private void chbox2_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (chbox2.CheckedItems.Count > 0)
-            {
-                chbox1.Enabled = false;
-                chbox3.Enabled = false;
-            }
-            else
-            {
-                chbox1.Enabled = true;
-                chbox3.Enabled = true;
-            }
-        }
-
-        private void chbox3_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (chbox3.CheckedItems.Count > 0)
-            {
-                chbox2.Enabled = false;
-                chbox1.Enabled = false;
-            }
-            else
-            {
-                chbox2.Enabled = true;
-                chbox1.Enabled = true;
-            }
-        }
+       
 
         private void btnPrint_Click(object sender, EventArgs e)
         {
-            if(chbox1.Items.Count == 0 && chbox2.Items.Count == 0 && chbox3.Items.Count == 0)
+            if (chbox1.Items.Count == 0)// && chbox2.Items.Count == 0 && chbox3.Items.Count == 0)
             {
                 MessageBox.Show("יש לבחור לפחות ספק אחד");
                 return;
             }
             tabMain.SelectedIndex = 0;
             var sdirs = new List<string>();
-            string num;
-            CheckedListBox.CheckedItemCollection col;
-            if(chbox1.CheckedItems.Count > 0)
+            string num = "0";
+            CheckedListBox.CheckedItemCollection col = null;
+            if (chbox1.CheckedItems.Count > 0)
             {
-                num = "1";
+                num = CurrentDirectory;
                 col = chbox1.CheckedItems;
             }
-            else if(chbox2.CheckedItems.Count > 0)
+            else
             {
-                num = "2";
-                col = chbox2.CheckedItems;
-            }
-            else 
-            {
-                num = "3";
-                col = chbox3.CheckedItems;
+                MessageBox.Show("יש לבחור תקיות");
             }
 
             for (int i = 0; i < col.Count; i++)
             {
                 sdirs.Add(col[i].ToString());
             }
-            
+
             Start(num, sdirs);
 
         }
@@ -987,8 +1019,10 @@ namespace MergeAndPrint
             Properties.Settings.Default.Save();
             Printer33 = cboPrinter33.SelectedItem.ToString();
         }
+
+        
     }
 
-   
+
 }
 

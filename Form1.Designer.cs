@@ -30,6 +30,12 @@
         {
             this.tabMain = new System.Windows.Forms.TabControl();
             this.tmain = new System.Windows.Forms.TabPage();
+            this.lb22 = new System.Windows.Forms.Label();
+            this.lb33 = new System.Windows.Forms.Label();
+            this.lb11 = new System.Windows.Forms.Label();
+            this.btn22 = new System.Windows.Forms.Button();
+            this.btn33 = new System.Windows.Forms.Button();
+            this.btn11 = new System.Windows.Forms.Button();
             this.lblTime = new System.Windows.Forms.Label();
             this.lblCountDown = new System.Windows.Forms.Label();
             this.txtDetails = new System.Windows.Forms.RichTextBox();
@@ -40,14 +46,17 @@
             this.btn3 = new System.Windows.Forms.Button();
             this.btn1 = new System.Windows.Forms.Button();
             this.tprint = new System.Windows.Forms.TabPage();
+            this.lstFolder = new System.Windows.Forms.ListBox();
             this.btnPrint = new System.Windows.Forms.Button();
-            this.groupBox3 = new System.Windows.Forms.GroupBox();
-            this.chbox3 = new System.Windows.Forms.CheckedListBox();
-            this.groupBox2 = new System.Windows.Forms.GroupBox();
-            this.chbox2 = new System.Windows.Forms.CheckedListBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.chbox1 = new System.Windows.Forms.CheckedListBox();
             this.tconfig = new System.Windows.Forms.TabPage();
+            this.cboPrinter33 = new System.Windows.Forms.ComboBox();
+            this.cboPrinter22 = new System.Windows.Forms.ComboBox();
+            this.cboPrinter11 = new System.Windows.Forms.ComboBox();
+            this.label9 = new System.Windows.Forms.Label();
+            this.label10 = new System.Windows.Forms.Label();
+            this.label11 = new System.Windows.Forms.Label();
             this.txtTimer = new System.Windows.Forms.TextBox();
             this.label7 = new System.Windows.Forms.Label();
             this.bArchive = new System.Windows.Forms.Button();
@@ -70,23 +79,10 @@
             this.lbl1 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
-            this.btn11 = new System.Windows.Forms.Button();
-            this.btn33 = new System.Windows.Forms.Button();
-            this.btn22 = new System.Windows.Forms.Button();
-            this.cboPrinter33 = new System.Windows.Forms.ComboBox();
-            this.cboPrinter22 = new System.Windows.Forms.ComboBox();
-            this.cboPrinter11 = new System.Windows.Forms.ComboBox();
-            this.label9 = new System.Windows.Forms.Label();
-            this.label10 = new System.Windows.Forms.Label();
-            this.label11 = new System.Windows.Forms.Label();
-            this.lb11 = new System.Windows.Forms.Label();
-            this.lb33 = new System.Windows.Forms.Label();
-            this.lb22 = new System.Windows.Forms.Label();
+            this.btnReset = new System.Windows.Forms.Button();
             this.tabMain.SuspendLayout();
             this.tmain.SuspendLayout();
             this.tprint.SuspendLayout();
-            this.groupBox3.SuspendLayout();
-            this.groupBox2.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.tconfig.SuspendLayout();
             this.SuspendLayout();
@@ -99,12 +95,12 @@
             this.tabMain.Controls.Add(this.tconfig);
             this.tabMain.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tabMain.HotTrack = true;
-            this.tabMain.Location = new System.Drawing.Point(27, 45);
+            this.tabMain.Location = new System.Drawing.Point(26, 67);
             this.tabMain.Name = "tabMain";
             this.tabMain.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.tabMain.RightToLeftLayout = true;
             this.tabMain.SelectedIndex = 0;
-            this.tabMain.Size = new System.Drawing.Size(738, 600);
+            this.tabMain.Size = new System.Drawing.Size(738, 643);
             this.tabMain.TabIndex = 0;
             // 
             // tmain
@@ -129,9 +125,69 @@
             this.tmain.Location = new System.Drawing.Point(4, 30);
             this.tmain.Name = "tmain";
             this.tmain.Padding = new System.Windows.Forms.Padding(3);
-            this.tmain.Size = new System.Drawing.Size(730, 566);
+            this.tmain.Size = new System.Drawing.Size(730, 548);
             this.tmain.TabIndex = 0;
             this.tmain.Text = "ראשי";
+            // 
+            // lb22
+            // 
+            this.lb22.AutoSize = true;
+            this.lb22.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.lb22.Location = new System.Drawing.Point(59, 149);
+            this.lb22.Name = "lb22";
+            this.lb22.Size = new System.Drawing.Size(101, 19);
+            this.lb22.TabIndex = 21;
+            this.lb22.Text = "כמות ספקים 1";
+            // 
+            // lb33
+            // 
+            this.lb33.AutoSize = true;
+            this.lb33.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.lb33.Location = new System.Drawing.Point(59, 239);
+            this.lb33.Name = "lb33";
+            this.lb33.Size = new System.Drawing.Size(101, 19);
+            this.lb33.TabIndex = 20;
+            this.lb33.Text = "כמות ספקים 1";
+            // 
+            // lb11
+            // 
+            this.lb11.AutoSize = true;
+            this.lb11.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.lb11.Location = new System.Drawing.Point(59, 65);
+            this.lb11.Name = "lb11";
+            this.lb11.Size = new System.Drawing.Size(101, 19);
+            this.lb11.TabIndex = 19;
+            this.lb11.Text = "כמות ספקים 1";
+            // 
+            // btn22
+            // 
+            this.btn22.Location = new System.Drawing.Point(182, 140);
+            this.btn22.Name = "btn22";
+            this.btn22.Size = new System.Drawing.Size(186, 39);
+            this.btn22.TabIndex = 18;
+            this.btn22.Text = "עותק 2 מקביל";
+            this.btn22.UseVisualStyleBackColor = true;
+            this.btn22.Click += new System.EventHandler(this.btn22_Click);
+            // 
+            // btn33
+            // 
+            this.btn33.Location = new System.Drawing.Point(182, 230);
+            this.btn33.Name = "btn33";
+            this.btn33.Size = new System.Drawing.Size(186, 39);
+            this.btn33.TabIndex = 17;
+            this.btn33.Text = "עותק 3 מקביל";
+            this.btn33.UseVisualStyleBackColor = true;
+            this.btn33.Click += new System.EventHandler(this.btn33_Click);
+            // 
+            // btn11
+            // 
+            this.btn11.Location = new System.Drawing.Point(182, 56);
+            this.btn11.Name = "btn11";
+            this.btn11.Size = new System.Drawing.Size(186, 39);
+            this.btn11.TabIndex = 16;
+            this.btn11.Text = "עותק 1 מקביל";
+            this.btn11.UseVisualStyleBackColor = true;
+            this.btn11.Click += new System.EventHandler(this.btn11_Click);
             // 
             // lblTime
             // 
@@ -163,7 +219,7 @@
             this.txtDetails.Name = "txtDetails";
             this.txtDetails.ReadOnly = true;
             this.txtDetails.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.txtDetails.Size = new System.Drawing.Size(718, 230);
+            this.txtDetails.Size = new System.Drawing.Size(718, 192);
             this.txtDetails.TabIndex = 13;
             this.txtDetails.Text = "";
             // 
@@ -230,21 +286,31 @@
             // tprint
             // 
             this.tprint.BackColor = System.Drawing.Color.WhiteSmoke;
+            this.tprint.Controls.Add(this.lstFolder);
             this.tprint.Controls.Add(this.btnPrint);
-            this.tprint.Controls.Add(this.groupBox3);
-            this.tprint.Controls.Add(this.groupBox2);
             this.tprint.Controls.Add(this.groupBox1);
             this.tprint.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tprint.Location = new System.Drawing.Point(4, 30);
             this.tprint.Name = "tprint";
             this.tprint.Padding = new System.Windows.Forms.Padding(3);
-            this.tprint.Size = new System.Drawing.Size(730, 566);
+            this.tprint.Size = new System.Drawing.Size(730, 609);
             this.tprint.TabIndex = 1;
             this.tprint.Text = "הדפסה פרטנית";
             // 
+            // lstFolder
+            // 
+            this.lstFolder.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lstFolder.FormattingEnabled = true;
+            this.lstFolder.ItemHeight = 19;
+            this.lstFolder.Location = new System.Drawing.Point(263, 6);
+            this.lstFolder.Name = "lstFolder";
+            this.lstFolder.Size = new System.Drawing.Size(458, 194);
+            this.lstFolder.TabIndex = 4;
+            this.lstFolder.SelectedIndexChanged += new System.EventHandler(this.lstFolder_SelectedIndexChanged);
+            // 
             // btnPrint
             // 
-            this.btnPrint.Location = new System.Drawing.Point(312, 545);
+            this.btnPrint.Location = new System.Drawing.Point(306, 567);
             this.btnPrint.Name = "btnPrint";
             this.btnPrint.Size = new System.Drawing.Size(134, 23);
             this.btnPrint.TabIndex = 3;
@@ -252,65 +318,15 @@
             this.btnPrint.UseVisualStyleBackColor = true;
             this.btnPrint.Click += new System.EventHandler(this.btnPrint_Click);
             // 
-            // groupBox3
-            // 
-            this.groupBox3.AutoSize = true;
-            this.groupBox3.Controls.Add(this.chbox3);
-            this.groupBox3.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.groupBox3.Font = new System.Drawing.Font("Arial", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox3.Location = new System.Drawing.Point(6, 376);
-            this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(718, 166);
-            this.groupBox3.TabIndex = 2;
-            this.groupBox3.TabStop = false;
-            this.groupBox3.Text = "תיקיה 3";
-            // 
-            // chbox3
-            // 
-            this.chbox3.CheckOnClick = true;
-            this.chbox3.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.chbox3.Font = new System.Drawing.Font("Arial", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.chbox3.FormattingEnabled = true;
-            this.chbox3.Location = new System.Drawing.Point(3, 25);
-            this.chbox3.Name = "chbox3";
-            this.chbox3.Size = new System.Drawing.Size(712, 138);
-            this.chbox3.TabIndex = 1;
-            this.chbox3.SelectedIndexChanged += new System.EventHandler(this.chbox3_SelectedIndexChanged);
-            // 
-            // groupBox2
-            // 
-            this.groupBox2.AutoSize = true;
-            this.groupBox2.Controls.Add(this.chbox2);
-            this.groupBox2.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.groupBox2.Font = new System.Drawing.Font("Arial", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox2.Location = new System.Drawing.Point(6, 204);
-            this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(718, 166);
-            this.groupBox2.TabIndex = 1;
-            this.groupBox2.TabStop = false;
-            this.groupBox2.Text = "תיקיה 2";
-            // 
-            // chbox2
-            // 
-            this.chbox2.CheckOnClick = true;
-            this.chbox2.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.chbox2.Font = new System.Drawing.Font("Arial", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.chbox2.FormattingEnabled = true;
-            this.chbox2.Location = new System.Drawing.Point(3, 25);
-            this.chbox2.Name = "chbox2";
-            this.chbox2.Size = new System.Drawing.Size(712, 138);
-            this.chbox2.TabIndex = 1;
-            this.chbox2.SelectedIndexChanged += new System.EventHandler(this.chbox2_SelectedIndexChanged);
-            // 
             // groupBox1
             // 
             this.groupBox1.AutoSize = true;
             this.groupBox1.Controls.Add(this.chbox1);
             this.groupBox1.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
             this.groupBox1.Font = new System.Drawing.Font("Arial", 14F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox1.Location = new System.Drawing.Point(6, 33);
+            this.groupBox1.Location = new System.Drawing.Point(6, 206);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(718, 166);
+            this.groupBox1.Size = new System.Drawing.Size(721, 345);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "תיקיה 1";
@@ -318,15 +334,13 @@
             // chbox1
             // 
             this.chbox1.CheckOnClick = true;
-            this.chbox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.chbox1.Font = new System.Drawing.Font("Arial", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.chbox1.FormattingEnabled = true;
             this.chbox1.Location = new System.Drawing.Point(3, 25);
             this.chbox1.Name = "chbox1";
-            this.chbox1.Size = new System.Drawing.Size(712, 138);
+            this.chbox1.Size = new System.Drawing.Size(712, 292);
             this.chbox1.TabIndex = 1;
             this.chbox1.ThreeDCheckBoxes = true;
-            this.chbox1.SelectedIndexChanged += new System.EventHandler(this.chbox1_SelectedIndexChanged);
             // 
             // tconfig
             // 
@@ -359,9 +373,66 @@
             this.tconfig.Controls.Add(this.lbl1);
             this.tconfig.Location = new System.Drawing.Point(4, 30);
             this.tconfig.Name = "tconfig";
-            this.tconfig.Size = new System.Drawing.Size(730, 566);
+            this.tconfig.Size = new System.Drawing.Size(730, 548);
             this.tconfig.TabIndex = 2;
             this.tconfig.Text = "קונפיגורציה";
+            // 
+            // cboPrinter33
+            // 
+            this.cboPrinter33.FormattingEnabled = true;
+            this.cboPrinter33.Location = new System.Drawing.Point(272, 441);
+            this.cboPrinter33.Name = "cboPrinter33";
+            this.cboPrinter33.Size = new System.Drawing.Size(246, 26);
+            this.cboPrinter33.TabIndex = 30;
+            this.cboPrinter33.SelectedIndexChanged += new System.EventHandler(this.cboPrinter33_SelectedIndexChanged);
+            // 
+            // cboPrinter22
+            // 
+            this.cboPrinter22.FormattingEnabled = true;
+            this.cboPrinter22.Location = new System.Drawing.Point(272, 396);
+            this.cboPrinter22.Name = "cboPrinter22";
+            this.cboPrinter22.Size = new System.Drawing.Size(246, 26);
+            this.cboPrinter22.TabIndex = 29;
+            this.cboPrinter22.SelectedIndexChanged += new System.EventHandler(this.cboPrinter22_SelectedIndexChanged);
+            // 
+            // cboPrinter11
+            // 
+            this.cboPrinter11.FormattingEnabled = true;
+            this.cboPrinter11.Location = new System.Drawing.Point(272, 354);
+            this.cboPrinter11.Name = "cboPrinter11";
+            this.cboPrinter11.Size = new System.Drawing.Size(246, 26);
+            this.cboPrinter11.TabIndex = 28;
+            this.cboPrinter11.SelectedIndexChanged += new System.EventHandler(this.cboPrinter11_SelectedIndexChanged);
+            // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.label9.Location = new System.Drawing.Point(552, 444);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(167, 19);
+            this.label9.TabIndex = 27;
+            this.label9.Text = "מדפסת לכפתור 3 מקביל";
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.label10.Location = new System.Drawing.Point(552, 396);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(167, 19);
+            this.label10.TabIndex = 26;
+            this.label10.Text = "מדפסת לכפתור 2 מקביל";
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
+            this.label11.Location = new System.Drawing.Point(552, 354);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(167, 19);
+            this.label11.TabIndex = 25;
+            this.label11.Text = "מדפסת לכפתור 1 מקביל";
             // 
             // txtTimer
             // 
@@ -559,7 +630,7 @@
             // button1
             // 
             this.button1.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button1.Location = new System.Drawing.Point(27, 655);
+            this.button1.Location = new System.Drawing.Point(26, 716);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 2;
@@ -567,129 +638,25 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
-            // btn11
+            // btnReset
             // 
-            this.btn11.Location = new System.Drawing.Point(182, 56);
-            this.btn11.Name = "btn11";
-            this.btn11.Size = new System.Drawing.Size(186, 39);
-            this.btn11.TabIndex = 16;
-            this.btn11.Text = "עותק 1 מקביל";
-            this.btn11.UseVisualStyleBackColor = true;
-            this.btn11.Click += new System.EventHandler(this.btn11_Click);
-            // 
-            // btn33
-            // 
-            this.btn33.Location = new System.Drawing.Point(182, 230);
-            this.btn33.Name = "btn33";
-            this.btn33.Size = new System.Drawing.Size(186, 39);
-            this.btn33.TabIndex = 17;
-            this.btn33.Text = "עותק 3 מקביל";
-            this.btn33.UseVisualStyleBackColor = true;
-            this.btn33.Click += new System.EventHandler(this.btn33_Click);
-            // 
-            // btn22
-            // 
-            this.btn22.Location = new System.Drawing.Point(182, 140);
-            this.btn22.Name = "btn22";
-            this.btn22.Size = new System.Drawing.Size(186, 39);
-            this.btn22.TabIndex = 18;
-            this.btn22.Text = "עותק 2 מקביל";
-            this.btn22.UseVisualStyleBackColor = true;
-            this.btn22.Click += new System.EventHandler(this.btn22_Click);
-            // 
-            // cboPrinter33
-            // 
-            this.cboPrinter33.FormattingEnabled = true;
-            this.cboPrinter33.Location = new System.Drawing.Point(272, 441);
-            this.cboPrinter33.Name = "cboPrinter33";
-            this.cboPrinter33.Size = new System.Drawing.Size(246, 26);
-            this.cboPrinter33.TabIndex = 30;
-            this.cboPrinter33.SelectedIndexChanged += new System.EventHandler(this.cboPrinter33_SelectedIndexChanged);
-            // 
-            // cboPrinter22
-            // 
-            this.cboPrinter22.FormattingEnabled = true;
-            this.cboPrinter22.Location = new System.Drawing.Point(272, 396);
-            this.cboPrinter22.Name = "cboPrinter22";
-            this.cboPrinter22.Size = new System.Drawing.Size(246, 26);
-            this.cboPrinter22.TabIndex = 29;
-            this.cboPrinter22.SelectedIndexChanged += new System.EventHandler(this.cboPrinter22_SelectedIndexChanged);
-            // 
-            // cboPrinter11
-            // 
-            this.cboPrinter11.FormattingEnabled = true;
-            this.cboPrinter11.Location = new System.Drawing.Point(272, 354);
-            this.cboPrinter11.Name = "cboPrinter11";
-            this.cboPrinter11.Size = new System.Drawing.Size(246, 26);
-            this.cboPrinter11.TabIndex = 28;
-            this.cboPrinter11.SelectedIndexChanged += new System.EventHandler(this.cboPrinter11_SelectedIndexChanged);
-            // 
-            // label9
-            // 
-            this.label9.AutoSize = true;
-            this.label9.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.label9.Location = new System.Drawing.Point(552, 444);
-            this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(167, 19);
-            this.label9.TabIndex = 27;
-            this.label9.Text = "מדפסת לכפתור 3 מקביל";
-            // 
-            // label10
-            // 
-            this.label10.AutoSize = true;
-            this.label10.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.label10.Location = new System.Drawing.Point(552, 396);
-            this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(167, 19);
-            this.label10.TabIndex = 26;
-            this.label10.Text = "מדפסת לכפתור 2 מקביל";
-            // 
-            // label11
-            // 
-            this.label11.AutoSize = true;
-            this.label11.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.label11.Location = new System.Drawing.Point(552, 354);
-            this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(167, 19);
-            this.label11.TabIndex = 25;
-            this.label11.Text = "מדפסת לכפתור 1 מקביל";
-            // 
-            // lb11
-            // 
-            this.lb11.AutoSize = true;
-            this.lb11.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.lb11.Location = new System.Drawing.Point(59, 65);
-            this.lb11.Name = "lb11";
-            this.lb11.Size = new System.Drawing.Size(101, 19);
-            this.lb11.TabIndex = 19;
-            this.lb11.Text = "כמות ספקים 1";
-            // 
-            // lb33
-            // 
-            this.lb33.AutoSize = true;
-            this.lb33.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.lb33.Location = new System.Drawing.Point(59, 239);
-            this.lb33.Name = "lb33";
-            this.lb33.Size = new System.Drawing.Size(101, 19);
-            this.lb33.TabIndex = 20;
-            this.lb33.Text = "כמות ספקים 1";
-            // 
-            // lb22
-            // 
-            this.lb22.AutoSize = true;
-            this.lb22.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(177)));
-            this.lb22.Location = new System.Drawing.Point(59, 149);
-            this.lb22.Name = "lb22";
-            this.lb22.Size = new System.Drawing.Size(101, 19);
-            this.lb22.TabIndex = 21;
-            this.lb22.Text = "כמות ספקים 1";
+            this.btnReset.BackColor = System.Drawing.SystemColors.ActiveCaption;
+            this.btnReset.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnReset.Location = new System.Drawing.Point(634, 24);
+            this.btnReset.Name = "btnReset";
+            this.btnReset.Size = new System.Drawing.Size(130, 37);
+            this.btnReset.TabIndex = 3;
+            this.btnReset.Text = "רענון וסידור";
+            this.btnReset.UseVisualStyleBackColor = false;
+            this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.SteelBlue;
-            this.ClientSize = new System.Drawing.Size(776, 690);
+            this.ClientSize = new System.Drawing.Size(776, 751);
+            this.Controls.Add(this.btnReset);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.label8);
             this.Controls.Add(this.tabMain);
@@ -700,8 +667,6 @@
             this.tmain.PerformLayout();
             this.tprint.ResumeLayout(false);
             this.tprint.PerformLayout();
-            this.groupBox3.ResumeLayout(false);
-            this.groupBox2.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
             this.tconfig.ResumeLayout(false);
             this.tconfig.PerformLayout();
@@ -742,10 +707,6 @@
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.CheckedListBox chbox1;
-        private System.Windows.Forms.GroupBox groupBox3;
-        private System.Windows.Forms.CheckedListBox chbox3;
-        private System.Windows.Forms.GroupBox groupBox2;
-        private System.Windows.Forms.CheckedListBox chbox2;
         private System.Windows.Forms.Button btnPrint;
         private System.Windows.Forms.RichTextBox txtDetails;
         private System.Windows.Forms.Label lblCountDown;
@@ -766,6 +727,8 @@
         private System.Windows.Forms.Label lb22;
         private System.Windows.Forms.Label lb33;
         private System.Windows.Forms.Label lb11;
+        private System.Windows.Forms.ListBox lstFolder;
+        private System.Windows.Forms.Button btnReset;
     }
 }
 
