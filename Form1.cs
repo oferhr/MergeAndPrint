@@ -186,24 +186,50 @@ namespace MergeAndPrint
             foreach (var num in nums)
             {
                 var path = Path.Combine(txtMain.Text, num);
-                var dirs = Directory.GetDirectories(path);
-                foreach (var dir in dirs)
-                {
-                    if (Path.GetFileName(dir).StartsWith("999_"))
-                    {
-                        if (!Directory.Exists(Path.Combine(txtMain.Text, num.ToString() + "_999")))
-                        {
-                            Directory.CreateDirectory(Path.Combine(txtMain.Text, num.ToString() + "_999"));
-                        }
-                        Directory.Move(dir, Path.Combine(Path.Combine(txtMain.Text, num.ToString() + "_999"), Path.GetFileName(dir)));
-                    }
-                }
-                
+                MoveDir(path, num);
             }
             //txtDetails.Clear();
             updateScreen();
             updateDirectories();
             Clean();
+        }
+        private void MoveDir(string path, string num)
+        {
+            try
+            {
+                var dirs = Directory.GetDirectories(path);
+                foreach (var dir in dirs)
+                {
+                    if (Path.GetFileName(dir).StartsWith("999_"))
+                    {
+                        var p999 = Path.Combine(txtMain.Text, num.ToString() + "_999");
+                        if (!Directory.Exists(p999))
+                        {
+                            Directory.CreateDirectory(p999);
+                        }
+                        var dest = Path.Combine(p999, Path.GetFileName(dir));
+                        if (!Directory.Exists(dest))
+                        {
+                            Directory.CreateDirectory(dest);
+                        }
+                        foreach (var file in Directory.GetFiles(dir, "*.*"))
+                        {
+                            string targetFile = Path.Combine(dest, Path.GetFileName(file));
+                            if (File.Exists(targetFile))
+                            {
+                                File.Delete(targetFile);
+                            }
+                            File.Move(file, targetFile);
+                        }
+                        Directory.Delete(dir, true);
+                        //Directory.Move(dir, Path.Combine(Path.Combine(txtMain.Text, num.ToString() + "_999"), Path.GetFileName(dir)));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                SimpleLogger.SimpleLog.Log(ex);
+            }
         }
         private void lstFolder_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -517,11 +543,26 @@ namespace MergeAndPrint
                     var dir = dirs[i];
                     if (!num.EndsWith("999") && Path.GetFileName(dir).StartsWith("999_"))
                     {
-                        if (!Directory.Exists(Path.Combine(txtMain.Text, num.ToString() + "_999")))
+                        var p999 = Path.Combine(txtMain.Text, num.ToString() + "_999");
+                        if (!Directory.Exists(p999))
                         {
                             Directory.CreateDirectory(Path.Combine(txtMain.Text, num.ToString() + "_999"));
                         }
-                        Directory.Move(dir, Path.Combine(Path.Combine(txtMain.Text, num.ToString() + "_999"), Path.GetFileName(dir)));
+                        var dest = Path.Combine(p999, Path.GetFileName(dir));
+                        if (!Directory.Exists(dest))
+                        {
+                            Directory.CreateDirectory(dest);
+                        }
+                        foreach (var file in Directory.GetFiles(dir, "*.*"))
+                        {
+                            string targetFile = Path.Combine(dest, Path.GetFileName(file));
+                            if (File.Exists(targetFile))
+                            {
+                                File.Delete(targetFile);
+                            }
+                            File.Move(file, targetFile);
+                        }
+                        Directory.Delete(dir, true);
                         continue;
                     }
                     logToScreen("מתחיל בהמרת קבצים בתיקיה  - " + Path.GetFileName(dir));
