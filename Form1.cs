@@ -119,7 +119,7 @@ namespace MergeAndPrint
                 }
                 cboPrinter3.SelectedIndex = counter1;
             }
-            var dirPrinter11 = Properties.Settings.Default.Printer22;
+            var dirPrinter11 = Properties.Settings.Default.Printer11;
             if (!string.IsNullOrEmpty(dirPrinter11))
             {
                 Printer11 = dirPrinter11;
