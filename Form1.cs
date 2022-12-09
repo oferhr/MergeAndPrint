@@ -807,7 +807,7 @@ namespace MergeAndPrint
             var baseSource = diSource.FullName;
             if (sdirs == null)
             {
-                CopyFolder(diSource, diTarget);
+                CopyFolder(diSource, diTarget, false);
                 DelSource(num);
             }
             else
@@ -816,7 +816,7 @@ namespace MergeAndPrint
                 {
                     diSource = new DirectoryInfo(Path.Combine(baseSource, dir));
                     diTarget = new DirectoryInfo(Path.Combine(baseTarget, dir));
-                    CopyFolder(diSource, diTarget);
+                    CopyFolder(diSource, diTarget, false);
                 }
                 DelSource(num, sdirs);
             }
@@ -855,7 +855,7 @@ namespace MergeAndPrint
             var baseSource = diSource.FullName;
             if (!isPicked)
             {
-                CopyFolder(diSource, diTarget);
+                CopyFolder(diSource, diTarget, true);
             }
             else
             {
@@ -863,11 +863,11 @@ namespace MergeAndPrint
                 {
                     diSource = new DirectoryInfo(Path.Combine(baseSource, dir));
                     diTarget = new DirectoryInfo(Path.Combine(baseTarget, dir));
-                    CopyFolder(diSource, diTarget);
+                    CopyFolder(diSource, diTarget, true);
                 }
             }
         }
-        private void CopyFolder(DirectoryInfo source, DirectoryInfo target)
+        private void CopyFolder(DirectoryInfo source, DirectoryInfo target, bool isArchive)
         {
             if (!Directory.Exists(target.FullName))
             {
@@ -884,8 +884,12 @@ namespace MergeAndPrint
             // Copy each subdirectory using recursion.
             foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
             {
-                DirectoryInfo nextTargetSubDir = target.CreateSubdirectory(diSourceSubDir.Name);
-                CopyFolder(diSourceSubDir, nextTargetSubDir);
+                if(isArchive || !diSourceSubDir.Name.Contains("888"))
+                {
+                    DirectoryInfo nextTargetSubDir = target.CreateSubdirectory(diSourceSubDir.Name);
+                    CopyFolder(diSourceSubDir, nextTargetSubDir, isArchive);
+                }
+                
             }
         }
 
