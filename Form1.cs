@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using static System.Windows.Forms.AxHost;
 
 namespace MergeAndPrint
 {
@@ -25,14 +26,15 @@ namespace MergeAndPrint
         private System.Timers.Timer timer1;
         private int timerCounter = 30;
         private string timeVal;
+        private static string srcMinVal;
         private string CurrentDirectory = null;
         public Form1()
         {
             InitializeComponent();
 
-            
-             
-           // int.TryParse(ConfigurationManager.AppSettings["WaitSeconds"].ToString(), out timerCounter);
+
+
+            // int.TryParse(ConfigurationManager.AppSettings["WaitSeconds"].ToString(), out timerCounter);
             var printers = GetAllPrinterList();
             cboPrinter1.Items.AddRange(printers.ToArray());
             cboPrinter2.Items.AddRange(printers.ToArray());
@@ -51,7 +53,21 @@ namespace MergeAndPrint
                 timeVal = "30";
                 txtTimer.Text = "30";
             }
-
+            srcMinVal = Properties.Settings.Default.SrcMinPeriod;
+            if (!string.IsNullOrEmpty(srcMinVal))
+            {
+                txtSrcMinutes.Text = srcMinVal;
+            }
+            else
+            {
+                srcMinVal = "5";
+                txtSrcMinutes.Text = "5";
+            }
+            var dirsrcPath = Properties.Settings.Default.SourcePath;
+            if (!string.IsNullOrEmpty(dirsrcPath))
+            {
+                txtSource.Text = dirsrcPath;
+            }
             var dirmPath = Properties.Settings.Default.MainPath;
             if (!string.IsNullOrEmpty(dirmPath))
             {
@@ -185,13 +201,63 @@ namespace MergeAndPrint
             var nums = new string[] { "1", "2", "3" };
             foreach (var num in nums)
             {
-                var path = Path.Combine(txtMain.Text, num);
-                MoveDir(path, num);
+                var mpath = Path.Combine(txtMain.Text, num);
+                MoveDir(mpath, num);
+
+                var spath = Path.Combine(txtSource.Text, num);
+                SourceToMain(spath, mpath);
             }
             //txtDetails.Clear();
             updateScreen();
             updateDirectories();
             Clean();
+        }
+        private void SourceToMain(string spath, string mpath)
+        {
+            try
+            {
+                var files = GetRecentFilesInFolder(spath);
+                var dirs = Directory.GetDirectories(spath);
+                if (!Directory.Exists(mpath))
+                {
+                    Directory.CreateDirectory(mpath);
+                }
+                foreach (var dir in dirs)
+                {
+                    var count = Directory.GetFiles(dir).Length;
+                    if (count == 0)
+                    {
+                        continue;
+                    }
+                    var dird = Path.GetFileName(dir);
+                    var dirDest = Path.Combine(mpath, dird);
+                    if (!Directory.Exists(dirDest))
+                    {
+                        Directory.CreateDirectory(dirDest);
+                    }
+                }
+                foreach (var file in files)
+                {
+                    var dest = getDestPathForFile(file, mpath);
+
+                    if (!File.Exists(dest))
+                    {
+                        File.Move(file, dest);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                SimpleLogger.SimpleLog.Log(ex);
+            }
+
+        }
+        private string getDestPathForFile(string file, string mpath)
+        {
+            var dir = Path.GetDirectoryName(file);
+            var dirDest = Path.Combine(mpath, Path.GetFileName(dir));
+            var dest = Path.Combine(dirDest, Path.GetFileName(file));
+            return dest;
         }
         private void MoveDir(string path, string num)
         {
@@ -273,7 +339,7 @@ namespace MergeAndPrint
         {
             var dirInfos = new List<string>();
             chbox1.Items.Clear();
-           
+
 
             if (!string.IsNullOrEmpty(txtMain.Text))
             {
@@ -281,38 +347,44 @@ namespace MergeAndPrint
                 DirectoryInfo dirInfo;
                 if (Directory.Exists(path1))
                 {
-                    dirInfo = new DirectoryInfo(path1);
-                    var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
-                    lb1.Text = lDir.Count() + " ספקים ";
+                    int count = Directory.GetDirectories(path1, "*", SearchOption.TopDirectoryOnly)
+                    .Where(subDir => Directory.GetFiles(subDir).Length > 0)
+                    .Count();
+                    lb1.Text = count + " ספקים ";
                     dirInfos.Add("1 - " + lb1.Text);
-                   
+
                 }
                 path1 = Path.Combine(txtMain.Text, "2");
                 if (Directory.Exists(path1))
                 {
-                    dirInfo = new DirectoryInfo(path1);
-                    var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
-                    lb2.Text = lDir.Count() + " ספקים ";
+                    int count = Directory.GetDirectories(path1, "*", SearchOption.TopDirectoryOnly)
+                    .Where(subDir => Directory.GetFiles(subDir).Length > 0)
+                    .Count();
+                    lb2.Text = count + " ספקים ";
                     dirInfos.Add("2 - " + lb2.Text);
-                    
+
                 }
                 path1 = Path.Combine(txtMain.Text, "3");
                 if (Directory.Exists(path1))
                 {
                     dirInfo = new DirectoryInfo(path1);
-                    var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
-                    lb3.Text = lDir.Count() + " ספקים ";
+                  //  var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
+                    int count = Directory.GetDirectories(path1, "*", SearchOption.TopDirectoryOnly)
+                    .Where(subDir => Directory.GetFiles(subDir).Length > 0)
+                    .Count();
+                    lb3.Text = count + " ספקים ";
                     dirInfos.Add("3 - " + lb3.Text);
-                    
+
                 }
                 path1 = Path.Combine(txtMain.Text, "1_999");
                 if (Directory.Exists(path1))
                 {
-                    dirInfo = new DirectoryInfo(path1);
-                    var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
-                    lb11.Text = lDir.Count() + " ספקים ";
+                    int count = Directory.GetDirectories(path1, "*", SearchOption.TopDirectoryOnly)
+                    .Where(subDir => Directory.GetFiles(subDir).Length > 0)
+                    .Count();
+                    lb11.Text = count + " ספקים ";
                     dirInfos.Add("1_999 - " + lb11.Text);
-                  
+
                 }
                 else
                 {
@@ -321,11 +393,12 @@ namespace MergeAndPrint
                 path1 = Path.Combine(txtMain.Text, "2_999");
                 if (Directory.Exists(path1))
                 {
-                    dirInfo = new DirectoryInfo(path1);
-                    var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
-                    lb22.Text = lDir.Count() + " ספקים ";
+                    int count = Directory.GetDirectories(path1, "*", SearchOption.TopDirectoryOnly)
+                     .Where(subDir => Directory.GetFiles(subDir).Length > 0)
+                     .Count();
+                    lb22.Text = count + " ספקים ";
                     dirInfos.Add("2_999 - " + lb22.Text);
-                   
+
                 }
                 else
                 {
@@ -334,11 +407,12 @@ namespace MergeAndPrint
                 path1 = Path.Combine(txtMain.Text, "3_999");
                 if (Directory.Exists(path1))
                 {
-                    dirInfo = new DirectoryInfo(path1);
-                    var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
-                    lb33.Text = lDir.Count() + " ספקים ";
+                    int count = Directory.GetDirectories(path1, "*", SearchOption.TopDirectoryOnly)
+                    .Where(subDir => Directory.GetFiles(subDir).Length > 0)
+                    .Count();
+                    lb33.Text = count + " ספקים ";
                     dirInfos.Add("3_999 - " + lb33.Text);
-                   
+
                 }
                 else
                 {
@@ -348,11 +422,68 @@ namespace MergeAndPrint
                 {
                     timerCounter = int.Parse(timeVal);
                 }
-                
+
 
             }
             return dirInfos;
         }
+
+        static List<string> GetRecentFilesInFolder(string folderPath)
+        {
+            List<string> recentFiles;
+            List<string> restFiles;
+
+            GetRecentAndRestFiles(folderPath, TimeSpan.FromMinutes(double.Parse(srcMinVal)), out recentFiles, out restFiles);
+            var tmp = new List<string>(recentFiles);
+            
+            foreach (string recentFilePath in tmp)
+            {
+                string[] recentFileNameParts = Path.GetFileNameWithoutExtension(recentFilePath).Split('_');
+                string key = $"{recentFileNameParts[0]}_{recentFileNameParts[1]}";
+
+                // Check if there are matching files in the "restFiles" list
+                List<string> matchingRestFiles = restFiles.Where(filePath => filePath.Contains(key)).ToList();
+
+                recentFiles.AddRange(matchingRestFiles);
+
+            }
+            return recentFiles.OrderBy(item => item).ToList();
+        }
+        static void GetRecentAndRestFiles(string folderPath, TimeSpan timeSpan, out List<string> recentFiles, out List<string> restFiles)
+        {
+            recentFiles = new List<string>();
+            restFiles = new List<string>();
+
+            try
+            {
+                DirectoryInfo directoryInfo = new DirectoryInfo(folderPath);
+                DateTime currentTime = DateTime.Now;
+
+                foreach (FileInfo fileInfo in directoryInfo.GetFiles("*", SearchOption.AllDirectories))
+                {
+                    // Calculate the time difference between the current time and the file's last modification time
+                    TimeSpan fileAge = currentTime - fileInfo.LastWriteTime;
+
+                    if (fileAge >= timeSpan)
+                    {
+                        recentFiles.Add(fileInfo.FullName);
+                    }
+                    else
+                    {
+                        restFiles.Add(fileInfo.FullName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                // Handle any exceptions that may occur during directory access
+            }
+        }
+
+
+
+
 
 
         private void logToScreen(string message)
@@ -586,41 +717,55 @@ namespace MergeAndPrint
                             Application.DoEvents();
                             if (ext.ToLower() == ".jpg" || ext.ToLower() == ".jpeg")
                             {
-                                var converted = IronPdf.ImageToPdfConverter.ImageToPdf(file);
-                                converted.SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
+                                using (var converted = ImageToPdfConverter.ImageToPdf(file, IronPdf.Imaging.ImageBehavior.FitToPage))
+                                {
+                                    // converted.CompressImages(10);
+                                    converted.SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
+                                }
+
+                                //    var converted = IronPdf.ImageToPdfConverter.ImageToPdf(file);
+                                //converted.SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
+
                                 //ImageToPdfConverter.ImageToPdf(file, ImageBehavior.CropPage).SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
                             }
                             else if (ext.ToLower() == ".tiff" || ext.ToLower() == ".tif")
                             {
-                                var converted = IronPdf.ImageToPdfConverter.ImageToPdf(file);
-                                converted.SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
+
+                                using (var converted = ImageToPdfConverter.ImageToPdf(file, IronPdf.Imaging.ImageBehavior.FitToPage))
+                                {
+                                    converted.SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
+                                }
+                                //var converted = IronPdf.ImageToPdfConverter.ImageToPdf(file);
+                                //converted.SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
                                 //Image tiffImage = Image.FromFile(file);
                                 //Image[] images = SplitTIFFImage(tiffImage);
                                 //ImageToPdfConverter.ImageToPdf(images, ImageBehavior.CropPage).SaveAs(Path.Combine(Path.GetDirectoryName(file), fn + ".pdf"));
                             }
                             else if (ext.ToLower() == ".html" || ext.ToLower() == ".htm")
                             {
-                                using (var Renderer = new HtmlToPdf())
+                                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                                var Renderer = new ChromePdfRenderer();
+                                Renderer.RenderingOptions.InputEncoding = Encoding.GetEncoding(1255);
+                                Renderer.RenderingOptions.PrintHtmlBackgrounds = false;
+                                //Renderer.PrintOptions.PaperSize = PdfPrintOptions.PdfPaperSize.A4;
+                                //Renderer.PrintOptions.CssMediaType = PdfPrintOptions.PdfCssMediaType.Print;
+
+                                Renderer.RenderingOptions.PaperSize = IronPdf.Rendering.PdfPaperSize.A4;
+                                Renderer.RenderingOptions.CssMediaType = IronPdf.Rendering.PdfCssMediaType.Print;
+
+                                //Renderer.PrintOptions.EnableJavaScript = true;
+                                //Renderer.PrintOptions.ViewPortWidth = 1280;
+                                //Renderer.PrintOptions.RenderDelay = 500; //milliseconds
+                                Renderer.RenderingOptions.MarginLeft = 10;
+                                Renderer.RenderingOptions.MarginRight = 10;
+                                Renderer.RenderingOptions.MarginTop = 10;
+                                Renderer.RenderingOptions.MarginBottom = 10;
+                                Renderer.RenderingOptions.Zoom = 100;
+
+                                using (var PDF = Renderer.RenderHtmlFileAsPdf(file))
                                 {
-                                    Renderer.PrintOptions.InputEncoding = Encoding.GetEncoding(1255);
-                                    Renderer.PrintOptions.PrintHtmlBackgrounds = false;
-                                    Renderer.PrintOptions.PaperSize = PdfPrintOptions.PdfPaperSize.A4;
-                                    Renderer.PrintOptions.CssMediaType = PdfPrintOptions.PdfCssMediaType.Print;
-                                    //Renderer.PrintOptions.EnableJavaScript = true;
-                                    //Renderer.PrintOptions.ViewPortWidth = 1280;
-                                    //Renderer.PrintOptions.RenderDelay = 500; //milliseconds
-                                    Renderer.PrintOptions.MarginLeft = 10;
-                                    Renderer.PrintOptions.MarginRight = 10;
-                                    Renderer.PrintOptions.MarginTop = 10;
-                                    Renderer.PrintOptions.MarginBottom = 10;
-                                    Renderer.PrintOptions.Zoom = 120;
-
-                                    using (var PDF = Renderer.RenderHTMLFileAsPdf(file))
-                                    {
-                                        var OutputPath = Path.Combine(Path.GetDirectoryName(file), fn + ".pdf");
-                                        PDF.SaveAs(OutputPath);
-                                    }
-
+                                    var OutputPath = Path.Combine(Path.GetDirectoryName(file), fn + ".pdf");
+                                    PDF.SaveAs(OutputPath);
                                 }
                             }
                         }
@@ -851,14 +996,15 @@ namespace MergeAndPrint
             var selected = isPicked ? "-selected" : string.Empty;
             var path = Path.Combine(txtArchive.Text, dt + "-" + num + selected);
             var diTarget = new DirectoryInfo(path);
-            var baseTarget = diTarget.FullName;
-            var baseSource = diSource.FullName;
+            
             if (!isPicked)
             {
                 CopyFolder(diSource, diTarget, true);
             }
             else
             {
+                var baseTarget = diTarget.FullName;
+                var baseSource = diSource.FullName;
                 foreach (var dir in sdirs)
                 {
                     diSource = new DirectoryInfo(Path.Combine(baseSource, dir));
@@ -867,7 +1013,7 @@ namespace MergeAndPrint
                 }
             }
         }
-        private void CopyFolder(DirectoryInfo source, DirectoryInfo target, bool isArchive)
+        private void CopyFolder(DirectoryInfo source, DirectoryInfo target, bool includeSubDirs)
         {
             if (!Directory.Exists(target.FullName))
             {
@@ -884,12 +1030,12 @@ namespace MergeAndPrint
             // Copy each subdirectory using recursion.
             foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
             {
-                if(isArchive || !diSourceSubDir.Name.Contains("888"))
+                if (includeSubDirs || !diSourceSubDir.Name.Contains("888"))
                 {
                     DirectoryInfo nextTargetSubDir = target.CreateSubdirectory(diSourceSubDir.Name);
-                    CopyFolder(diSourceSubDir, nextTargetSubDir, isArchive);
+                    CopyFolder(diSourceSubDir, nextTargetSubDir, includeSubDirs);
                 }
-                
+
             }
         }
 
@@ -913,7 +1059,20 @@ namespace MergeAndPrint
             }
             return _prntrs;
         }
+        private void btnBrowseSrc_Click(object sender, EventArgs e)
+        {
+            using (var fbd = new FolderBrowserDialog())
+            {
+                DialogResult result = fbd.ShowDialog();
 
+                if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
+                {
+                    txtSource.Text = fbd.SelectedPath;
+                    Properties.Settings.Default.SourcePath = fbd.SelectedPath;
+                    Properties.Settings.Default.Save();
+                }
+            }
+        }
         private void btnBrowse_Click(object sender, EventArgs e)
         {
             using (var fbd = new FolderBrowserDialog())
@@ -997,17 +1156,18 @@ namespace MergeAndPrint
         }
         private bool CheckProgress()
         {
-            if (string.IsNullOrEmpty(txtArchive.Text) || string.IsNullOrEmpty(txtMain.Text) || string.IsNullOrEmpty(txtPrint.Text) || string.IsNullOrEmpty(txtWorkFol.Text) || string.IsNullOrEmpty(txtTimer.Text))
+            if (string.IsNullOrEmpty(txtSource.Text) || string.IsNullOrEmpty(txtArchive.Text) || string.IsNullOrEmpty(txtMain.Text) || string.IsNullOrEmpty(txtPrint.Text) || string.IsNullOrEmpty(txtWorkFol.Text) || string.IsNullOrEmpty(txtTimer.Text))
             {
                 MessageBox.Show("פרטים חסרים בלשונית קונפיגורציה");
                 return false;
             }
             Properties.Settings.Default.TimerPeriod = txtTimer.Text;
+            Properties.Settings.Default.SrcMinPeriod = txtSrcMinutes.Text;
             Properties.Settings.Default.Save();
             return true;
         }
 
-       
+
 
         private void btnPrint_Click(object sender, EventArgs e)
         {
@@ -1065,7 +1225,7 @@ namespace MergeAndPrint
             Printer33 = cboPrinter33.SelectedItem.ToString();
         }
 
-        
+
     }
 
 
