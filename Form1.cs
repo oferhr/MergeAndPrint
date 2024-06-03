@@ -1,9 +1,9 @@
 ﻿using IronPdf;
+using SimpleLogger;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Data;
-using System.Drawing;
+using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Drawing.Printing;
 using System.IO;
@@ -11,7 +11,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using static System.Windows.Forms.AxHost;
 
 namespace MergeAndPrint
 {
@@ -23,11 +22,15 @@ namespace MergeAndPrint
         private string Printer11;
         private string Printer22;
         private string Printer33;
+        private string Printer9;
         private System.Timers.Timer timer1;
         private int timerCounter = 30;
         private string timeVal;
         private static string srcMinVal;
         private string CurrentDirectory = null;
+        private static bool PrintImageObj;
+        int pages = 0;
+        System.Drawing.Image printImg;
         public Form1()
         {
             InitializeComponent();
@@ -42,6 +45,7 @@ namespace MergeAndPrint
             cboPrinter11.Items.AddRange(printers.ToArray());
             cboPrinter22.Items.AddRange(printers.ToArray());
             cboPrinter33.Items.AddRange(printers.ToArray());
+            cboPrinter9.Items.AddRange(printers.ToArray());
 
             timeVal = Properties.Settings.Default.TimerPeriod;
             if (!string.IsNullOrEmpty(timeVal))
@@ -180,7 +184,21 @@ namespace MergeAndPrint
                 }
                 cboPrinter33.SelectedIndex = counter1;
             }
+            var dirPrinter9 = Properties.Settings.Default.Printer9;
+            if (!string.IsNullOrEmpty(dirPrinter9))
+            {
+                Printer9 = dirPrinter9;
+                counter = 0;
+                counter1 = 0;
+                foreach (var printer in PrinterSettings.InstalledPrinters)
+                {
+                    if (printer.ToString() == dirPrinter9)
+                        counter1 = counter;
 
+                    counter++;
+                }
+                cboPrinter9.SelectedIndex = counter1;
+            }
 
             updateScreen();
             updateDirectories();
@@ -368,7 +386,7 @@ namespace MergeAndPrint
                 if (Directory.Exists(path1))
                 {
                     dirInfo = new DirectoryInfo(path1);
-                  //  var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
+                    //  var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
                     int count = Directory.GetDirectories(path1, "*", SearchOption.TopDirectoryOnly)
                     .Where(subDir => Directory.GetFiles(subDir).Length > 0)
                     .Count();
@@ -422,7 +440,24 @@ namespace MergeAndPrint
                 {
                     timerCounter = int.Parse(timeVal);
                 }
+                path1 = Path.Combine(txtMain.Text, "9");
+                if (Directory.Exists(path1))
+                {
+                    int count = Directory.GetDirectories(path1, "*", SearchOption.TopDirectoryOnly)
+                    .Where(subDir => Directory.GetFiles(subDir).Length > 0)
+                    .Count();
+                    lbl9.Text = count + " ספקים ";
+                    dirInfos.Add("9 - " + lbl9.Text);
 
+                }
+                else
+                {
+                    lbl9.Text = " 0 ספקים ";
+                }
+                if (!string.IsNullOrEmpty(timeVal))
+                {
+                    timerCounter = int.Parse(timeVal);
+                }
 
             }
             return dirInfos;
@@ -435,7 +470,7 @@ namespace MergeAndPrint
 
             GetRecentAndRestFiles(folderPath, TimeSpan.FromMinutes(double.Parse(srcMinVal)), out recentFiles, out restFiles);
             var tmp = new List<string>(recentFiles);
-            
+
             foreach (string recentFilePath in tmp)
             {
                 string[] recentFileNameParts = Path.GetFileNameWithoutExtension(recentFilePath).Split('_');
@@ -525,7 +560,12 @@ namespace MergeAndPrint
             string num = "3_999";
             Start(num, null);
         }
-        private void Start(string num, List<string> sdirs)
+        private void btn9_Click(object sender, EventArgs e)
+        {
+            string num = "9";
+            Start(num, null, false);
+        }
+        private void Start(string num, List<string> sdirs, bool IsMerge = true)
         {
             if (!CheckProgress())
             {
@@ -548,21 +588,30 @@ namespace MergeAndPrint
             archive(num, sdirs);
             logToScreen("מעתיק קבצים לתקיה זמנית...");
             SendToWorkingFolder(num, sdirs);
-            logToScreen("מתחיל בהמרת הקבצים...");
-            if (!Convert(num, sdirs))
+            if (IsMerge)
             {
-                MessageBox.Show("הפעולה נכשלה, יש לבחון קובץ לוג");
-                return;
+                logToScreen("מתחיל בהמרת הקבצים...");
+                if (!Convert(num, sdirs))
+                {
+                    MessageBox.Show("הפעולה נכשלה, יש לבחון קובץ לוג");
+                    return;
+                }
+                logToScreen("מתחיל באיחוד הקבצים");
+                if (!Merge(num, sdirs))
+                {
+                    MessageBox.Show("הפעולה נכשלה, יש לבחון קובץ לוג");
+                    return;
+                }
+                logToScreen("מתחיל הדפסת הקבצים");
+                Print(num);
             }
-            logToScreen("מתחיל באיחוד הקבצים");
-            if (!Merge(num, sdirs))
+            else
             {
-                MessageBox.Show("הפעולה נכשלה, יש לבחון קובץ לוג");
-                return;
+                logToScreen("מתחיל הדפסת הקבצים");
+                printNoMerge(num);
             }
 
-            logToScreen("מתחיל הדפסת הקבצים");
-            Print(num);
+
             logToScreen("ממתין לספירה לאחור להסתיים");
             CountDown();
             updateDirectories();
@@ -575,6 +624,81 @@ namespace MergeAndPrint
 
 
         }
+
+        private void printNoMerge(string num)
+        {
+
+            var workingDir = Path.Combine(txtWorkFol.Text, num);
+            var lwFiles = Directory.GetFiles(workingDir, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (var file in lwFiles)
+            {
+                File.Move(file, Path.Combine(txtPrint.Text, Path.GetFileName(file)));
+            }
+
+
+            var printingDir = txtPrint.Text;
+            var lFiles = Directory.GetFiles(printingDir, "*.*", SearchOption.TopDirectoryOnly);
+            foreach (var file in lFiles)
+            {
+                var ext = Path.GetExtension(file).Split('.')[1].ToLower();
+                if (ext == "pdf")
+                {
+                    logToScreen("מדפיס קובץ  - " + Path.GetFileName(file));
+                    Application.DoEvents();
+                    var pdf = PdfDocument.FromFile(file);
+                    pdf.Print(Printer9);
+                    Thread.Sleep(1000);
+                }
+                else if (ext == "jpeg" || ext == "jpg" || ext == "tif" || ext == "tiff")
+                {
+                    try
+                    {
+                        PrintImage(file);
+
+                        while (PrintImageObj)
+                        {
+                            Thread.Sleep(500);
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        SimpleLog.Error("Print image failed");
+                        SimpleLog.Log(ex);
+                    }
+                    finally
+                    {
+                        Thread.Sleep(1000);
+                    }
+
+                }
+                else
+                {
+                    try
+                    {
+                        PrintFile(file);
+                        while (PrintImageObj)
+                        {
+                            Thread.Sleep(500);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        SimpleLog.Error("Print other failed");
+                        SimpleLog.Log(ex);
+                    }
+                    finally
+                    {
+                        Thread.Sleep(1000);
+                    }
+
+
+                }
+
+            }
+            
+        }
+
         private void Clean()
         {
             lblCountDown.Text = string.Empty;
@@ -922,24 +1046,79 @@ namespace MergeAndPrint
         //{
         //    throw new NotImplementedException();
         //}
-
-        private Image[] SplitTIFFImage(Image tiffImage)
+        private void PrintImage(string fileName)
         {
-            int frameCount = tiffImage.GetFrameCount(FrameDimension.Page);
-            Image[] images = new Image[frameCount];
-            Guid objGuid = tiffImage.FrameDimensionsList[0];
-            FrameDimension objDimension = new FrameDimension(objGuid);
-            for (int i = 0; i < frameCount; i++)
+            printImg = System.Drawing.Image.FromFile(fileName);
+            var h = printImg.Height;
+            var w = printImg.Width;
+            pages = 0;
+            using (PrintDocument printDoc = new PrintDocument())
             {
-                tiffImage.SelectActiveFrame(objDimension, i);
-                using (MemoryStream ms = new MemoryStream())
+                PrintImageObj = true;
+                if (!printDoc.PrinterSettings.IsValid)
                 {
-                    tiffImage.Save(ms, ImageFormat.Tiff);
-                    images[i] = Image.FromStream(ms);
+                    MessageBox.Show(@"Printer settings are invalid");
+                    return;
                 }
+                printDoc.PrinterSettings.PrinterName = Printer9;
+                printDoc.PrintPage += TiffPrintPage;
+                printDoc.DefaultPageSettings.Landscape = w > h;
+                printDoc.EndPrint += PrintTiffFileEndded;
+                printDoc.PrintController = new StandardPrintController();
+                printDoc.Print();
             }
-            return images;
         }
+        private void PrintFile(string fileName)
+        {
+            using (Process shellProcess = new Process())
+            {
+                shellProcess.StartInfo.FileName = fileName;
+                shellProcess.StartInfo.CreateNoWindow = true;
+                shellProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                shellProcess.StartInfo.Arguments = "\"" + Printer9 + "\"";
+                shellProcess.StartInfo.Verb = "PrintTo";
+                shellProcess.Start();
+                if (shellProcess.HasExited == false)
+                {
+                    shellProcess.WaitForExit(10000);
+                }
+
+                shellProcess.EnableRaisingEvents = true;
+
+                shellProcess.Close();
+            }
+        }
+        private void PrintTiffFileEndded(object sender, PrintEventArgs e)
+        {
+            PrintImageObj = false;
+        }
+        private void TiffPrintPage(object sender, PrintPageEventArgs e)
+        {
+            printImg.SelectActiveFrame(FrameDimension.Page, pages);
+            pages++;
+            e.Graphics.DrawImage(printImg, 0, 0);
+            if (pages < printImg.GetFrameCount(FrameDimension.Page))
+            {
+                e.HasMorePages = true;
+            }
+        }
+        //private Image[] SplitTIFFImage(Image tiffImage)
+        //{
+        //    int frameCount = tiffImage.GetFrameCount(FrameDimension.Page);
+        //    Image[] images = new Image[frameCount];
+        //    Guid objGuid = tiffImage.FrameDimensionsList[0];
+        //    FrameDimension objDimension = new FrameDimension(objGuid);
+        //    for (int i = 0; i < frameCount; i++)
+        //    {
+        //        tiffImage.SelectActiveFrame(objDimension, i);
+        //        using (MemoryStream ms = new MemoryStream())
+        //        {
+        //            tiffImage.Save(ms, ImageFormat.Tiff);
+        //            images[i] = Image.FromStream(ms);
+        //        }
+        //    }
+        //    return images;
+        //}
         private void SendToWorkingFolder(string num, List<string> sdirs)
         {
             var diSource = new DirectoryInfo(Path.Combine(txtMain.Text, num));
@@ -996,7 +1175,7 @@ namespace MergeAndPrint
             var selected = isPicked ? "-selected" : string.Empty;
             var path = Path.Combine(txtArchive.Text, dt + "-" + num + selected);
             var diTarget = new DirectoryInfo(path);
-            
+
             if (!isPicked)
             {
                 CopyFolder(diSource, diTarget, true);
@@ -1059,6 +1238,7 @@ namespace MergeAndPrint
             }
             return _prntrs;
         }
+
         private void btnBrowseSrc_Click(object sender, EventArgs e)
         {
             using (var fbd = new FolderBrowserDialog())
@@ -1225,7 +1405,12 @@ namespace MergeAndPrint
             Printer33 = cboPrinter33.SelectedItem.ToString();
         }
 
-
+        private void cboPrinter9_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.Printer9 = cboPrinter9.SelectedItem.ToString();
+            Properties.Settings.Default.Save();
+            Printer9 = cboPrinter9.SelectedItem.ToString();
+        }
     }
 
 

@@ -30,6 +30,8 @@
         {
             tabMain = new System.Windows.Forms.TabControl();
             tmain = new System.Windows.Forms.TabPage();
+            lbl9 = new System.Windows.Forms.Label();
+            btn9 = new System.Windows.Forms.Button();
             lb22 = new System.Windows.Forms.Label();
             lb33 = new System.Windows.Forms.Label();
             lb11 = new System.Windows.Forms.Label();
@@ -85,6 +87,8 @@
             label8 = new System.Windows.Forms.Label();
             button1 = new System.Windows.Forms.Button();
             btnReset = new System.Windows.Forms.Button();
+            cboPrinter9 = new System.Windows.Forms.ComboBox();
+            label14 = new System.Windows.Forms.Label();
             tabMain.SuspendLayout();
             tmain.SuspendLayout();
             tprint.SuspendLayout();
@@ -112,6 +116,8 @@
             // tmain
             // 
             tmain.BackColor = System.Drawing.Color.WhiteSmoke;
+            tmain.Controls.Add(lbl9);
+            tmain.Controls.Add(btn9);
             tmain.Controls.Add(lb22);
             tmain.Controls.Add(lb33);
             tmain.Controls.Add(lb11);
@@ -135,6 +141,28 @@
             tmain.Size = new System.Drawing.Size(853, 708);
             tmain.TabIndex = 0;
             tmain.Text = "ראשי";
+            // 
+            // lbl9
+            // 
+            lbl9.AutoSize = true;
+            lbl9.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            lbl9.Location = new System.Drawing.Point(484, 365);
+            lbl9.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lbl9.Name = "lbl9";
+            lbl9.Size = new System.Drawing.Size(101, 19);
+            lbl9.TabIndex = 23;
+            lbl9.Text = "כמות ספקים 0";
+            // 
+            // btn9
+            // 
+            btn9.Location = new System.Drawing.Point(609, 353);
+            btn9.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btn9.Name = "btn9";
+            btn9.Size = new System.Drawing.Size(217, 45);
+            btn9.TabIndex = 22;
+            btn9.Text = "הדפסת חשבונות";
+            btn9.UseVisualStyleBackColor = true;
+            btn9.Click += btn9_Click;
             // 
             // lb22
             // 
@@ -207,7 +235,7 @@
             lblTime.AutoSize = true;
             lblTime.Font = new System.Drawing.Font("Arial", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             lblTime.ForeColor = System.Drawing.Color.DarkBlue;
-            lblTime.Location = new System.Drawing.Point(453, 353);
+            lblTime.Location = new System.Drawing.Point(452, 401);
             lblTime.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblTime.Name = "lblTime";
             lblTime.Size = new System.Drawing.Size(105, 29);
@@ -230,7 +258,7 @@
             // 
             txtDetails.BackColor = System.Drawing.Color.Silver;
             txtDetails.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            txtDetails.Location = new System.Drawing.Point(7, 390);
+            txtDetails.Location = new System.Drawing.Point(12, 445);
             txtDetails.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             txtDetails.Name = "txtDetails";
             txtDetails.ReadOnly = true;
@@ -373,6 +401,8 @@
             // tconfig
             // 
             tconfig.BackColor = System.Drawing.Color.WhiteSmoke;
+            tconfig.Controls.Add(cboPrinter9);
+            tconfig.Controls.Add(label14);
             tconfig.Controls.Add(txtSrcMinutes);
             tconfig.Controls.Add(label13);
             tconfig.Controls.Add(btnBrowseSrc);
@@ -413,7 +443,7 @@
             // 
             // txtSrcMinutes
             // 
-            txtSrcMinutes.Location = new System.Drawing.Point(73, 625);
+            txtSrcMinutes.Location = new System.Drawing.Point(72, 658);
             txtSrcMinutes.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             txtSrcMinutes.Name = "txtSrcMinutes";
             txtSrcMinutes.Size = new System.Drawing.Size(116, 26);
@@ -423,7 +453,7 @@
             // 
             label13.AutoSize = true;
             label13.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label13.Location = new System.Drawing.Point(239, 624);
+            label13.Location = new System.Drawing.Point(238, 657);
             label13.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label13.Name = "label13";
             label13.Size = new System.Drawing.Size(173, 19);
@@ -494,7 +524,7 @@
             // 
             label9.AutoSize = true;
             label9.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label9.Location = new System.Drawing.Point(643, 564);
+            label9.Location = new System.Drawing.Point(650, 564);
             label9.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label9.Name = "label9";
             label9.Size = new System.Drawing.Size(167, 19);
@@ -505,7 +535,7 @@
             // 
             label10.AutoSize = true;
             label10.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label10.Location = new System.Drawing.Point(643, 509);
+            label10.Location = new System.Drawing.Point(650, 512);
             label10.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label10.Name = "label10";
             label10.Size = new System.Drawing.Size(167, 19);
@@ -516,7 +546,7 @@
             // 
             label11.AutoSize = true;
             label11.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label11.Location = new System.Drawing.Point(643, 460);
+            label11.Location = new System.Drawing.Point(650, 460);
             label11.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label11.Name = "label11";
             label11.Size = new System.Drawing.Size(167, 19);
@@ -525,7 +555,7 @@
             // 
             // txtTimer
             // 
-            txtTimer.Location = new System.Drawing.Point(487, 625);
+            txtTimer.Location = new System.Drawing.Point(486, 658);
             txtTimer.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             txtTimer.Name = "txtTimer";
             txtTimer.Size = new System.Drawing.Size(116, 26);
@@ -535,7 +565,7 @@
             // 
             label7.AutoSize = true;
             label7.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label7.Location = new System.Drawing.Point(653, 624);
+            label7.Location = new System.Drawing.Point(652, 657);
             label7.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label7.Name = "label7";
             label7.Size = new System.Drawing.Size(158, 19);
@@ -762,6 +792,27 @@
             btnReset.UseVisualStyleBackColor = false;
             btnReset.Click += btnReset_Click;
             // 
+            // cboPrinter9
+            // 
+            cboPrinter9.FormattingEnabled = true;
+            cboPrinter9.Location = new System.Drawing.Point(316, 607);
+            cboPrinter9.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            cboPrinter9.Name = "cboPrinter9";
+            cboPrinter9.Size = new System.Drawing.Size(286, 26);
+            cboPrinter9.TabIndex = 37;
+            cboPrinter9.SelectedIndexChanged += cboPrinter9_SelectedIndexChanged;
+            // 
+            // label14
+            // 
+            label14.AutoSize = true;
+            label14.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            label14.Location = new System.Drawing.Point(638, 610);
+            label14.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            label14.Name = "label14";
+            label14.Size = new System.Drawing.Size(179, 19);
+            label14.TabIndex = 36;
+            label14.Text = "מדפסת להדפסת חשבונות";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -846,6 +897,10 @@
         private System.Windows.Forms.Label label12;
         private System.Windows.Forms.TextBox txtSrcMinutes;
         private System.Windows.Forms.Label label13;
+        private System.Windows.Forms.Label lbl9;
+        private System.Windows.Forms.Button btn9;
+        private System.Windows.Forms.ComboBox cboPrinter9;
+        private System.Windows.Forms.Label label14;
     }
 }
 
