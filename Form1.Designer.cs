@@ -53,6 +53,8 @@
             groupBox1 = new System.Windows.Forms.GroupBox();
             chbox1 = new System.Windows.Forms.CheckedListBox();
             tconfig = new System.Windows.Forms.TabPage();
+            cboPrinter9 = new System.Windows.Forms.ComboBox();
+            label14 = new System.Windows.Forms.Label();
             txtSrcMinutes = new System.Windows.Forms.TextBox();
             label13 = new System.Windows.Forms.Label();
             btnBrowseSrc = new System.Windows.Forms.Button();
@@ -87,8 +89,6 @@
             label8 = new System.Windows.Forms.Label();
             button1 = new System.Windows.Forms.Button();
             btnReset = new System.Windows.Forms.Button();
-            cboPrinter9 = new System.Windows.Forms.ComboBox();
-            label14 = new System.Windows.Forms.Label();
             tabMain.SuspendLayout();
             tmain.SuspendLayout();
             tprint.SuspendLayout();
@@ -110,7 +110,7 @@
             tabMain.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             tabMain.RightToLeftLayout = true;
             tabMain.SelectedIndex = 0;
-            tabMain.Size = new System.Drawing.Size(861, 742);
+            tabMain.Size = new System.Drawing.Size(862, 604);
             tabMain.TabIndex = 0;
             // 
             // tmain
@@ -138,7 +138,7 @@
             tmain.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             tmain.Name = "tmain";
             tmain.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            tmain.Size = new System.Drawing.Size(853, 708);
+            tmain.Size = new System.Drawing.Size(854, 570);
             tmain.TabIndex = 0;
             tmain.Text = "ראשי";
             // 
@@ -146,7 +146,7 @@
             // 
             lbl9.AutoSize = true;
             lbl9.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            lbl9.Location = new System.Drawing.Point(484, 365);
+            lbl9.Location = new System.Drawing.Point(470, 244);
             lbl9.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lbl9.Name = "lbl9";
             lbl9.Size = new System.Drawing.Size(101, 19);
@@ -155,7 +155,7 @@
             // 
             // btn9
             // 
-            btn9.Location = new System.Drawing.Point(609, 353);
+            btn9.Location = new System.Drawing.Point(595, 232);
             btn9.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btn9.Name = "btn9";
             btn9.Size = new System.Drawing.Size(217, 45);
@@ -168,7 +168,7 @@
             // 
             lb22.AutoSize = true;
             lb22.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            lb22.Location = new System.Drawing.Point(69, 172);
+            lb22.Location = new System.Drawing.Point(55, 94);
             lb22.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lb22.Name = "lb22";
             lb22.Size = new System.Drawing.Size(101, 19);
@@ -179,7 +179,7 @@
             // 
             lb33.AutoSize = true;
             lb33.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            lb33.Location = new System.Drawing.Point(69, 276);
+            lb33.Location = new System.Drawing.Point(55, 169);
             lb33.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lb33.Name = "lb33";
             lb33.Size = new System.Drawing.Size(101, 19);
@@ -190,7 +190,7 @@
             // 
             lb11.AutoSize = true;
             lb11.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            lb11.Location = new System.Drawing.Point(69, 75);
+            lb11.Location = new System.Drawing.Point(55, 27);
             lb11.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lb11.Name = "lb11";
             lb11.Size = new System.Drawing.Size(101, 19);
@@ -199,7 +199,7 @@
             // 
             // btn22
             // 
-            btn22.Location = new System.Drawing.Point(212, 162);
+            btn22.Location = new System.Drawing.Point(198, 84);
             btn22.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btn22.Name = "btn22";
             btn22.Size = new System.Drawing.Size(217, 45);
@@ -210,7 +210,7 @@
             // 
             // btn33
             // 
-            btn33.Location = new System.Drawing.Point(212, 265);
+            btn33.Location = new System.Drawing.Point(198, 158);
             btn33.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btn33.Name = "btn33";
             btn33.Size = new System.Drawing.Size(217, 45);
@@ -221,7 +221,7 @@
             // 
             // btn11
             // 
-            btn11.Location = new System.Drawing.Point(212, 65);
+            btn11.Location = new System.Drawing.Point(198, 17);
             btn11.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btn11.Name = "btn11";
             btn11.Size = new System.Drawing.Size(217, 45);
@@ -235,7 +235,7 @@
             lblTime.AutoSize = true;
             lblTime.Font = new System.Drawing.Font("Arial", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             lblTime.ForeColor = System.Drawing.Color.DarkBlue;
-            lblTime.Location = new System.Drawing.Point(452, 401);
+            lblTime.Location = new System.Drawing.Point(438, 280);
             lblTime.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblTime.Name = "lblTime";
             lblTime.Size = new System.Drawing.Size(105, 29);
@@ -248,7 +248,7 @@
             lblCountDown.AutoSize = true;
             lblCountDown.Font = new System.Drawing.Font("Arial", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
             lblCountDown.ForeColor = System.Drawing.Color.DarkBlue;
-            lblCountDown.Location = new System.Drawing.Point(374, 353);
+            lblCountDown.Location = new System.Drawing.Point(360, 305);
             lblCountDown.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lblCountDown.Name = "lblCountDown";
             lblCountDown.Size = new System.Drawing.Size(0, 29);
@@ -258,7 +258,7 @@
             // 
             txtDetails.BackColor = System.Drawing.Color.Silver;
             txtDetails.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            txtDetails.Location = new System.Drawing.Point(12, 445);
+            txtDetails.Location = new System.Drawing.Point(12, 337);
             txtDetails.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             txtDetails.Name = "txtDetails";
             txtDetails.ReadOnly = true;
@@ -271,7 +271,7 @@
             // 
             lb2.AutoSize = true;
             lb2.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            lb2.Location = new System.Drawing.Point(484, 172);
+            lb2.Location = new System.Drawing.Point(470, 94);
             lb2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lb2.Name = "lb2";
             lb2.Size = new System.Drawing.Size(101, 19);
@@ -282,7 +282,7 @@
             // 
             lb3.AutoSize = true;
             lb3.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            lb3.Location = new System.Drawing.Point(484, 276);
+            lb3.Location = new System.Drawing.Point(470, 169);
             lb3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lb3.Name = "lb3";
             lb3.Size = new System.Drawing.Size(101, 19);
@@ -293,7 +293,7 @@
             // 
             lb1.AutoSize = true;
             lb1.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            lb1.Location = new System.Drawing.Point(484, 75);
+            lb1.Location = new System.Drawing.Point(470, 27);
             lb1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lb1.Name = "lb1";
             lb1.Size = new System.Drawing.Size(101, 19);
@@ -302,7 +302,7 @@
             // 
             // btn2
             // 
-            btn2.Location = new System.Drawing.Point(609, 162);
+            btn2.Location = new System.Drawing.Point(595, 84);
             btn2.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btn2.Name = "btn2";
             btn2.Size = new System.Drawing.Size(217, 45);
@@ -313,7 +313,7 @@
             // 
             // btn3
             // 
-            btn3.Location = new System.Drawing.Point(609, 265);
+            btn3.Location = new System.Drawing.Point(595, 158);
             btn3.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btn3.Name = "btn3";
             btn3.Size = new System.Drawing.Size(217, 45);
@@ -324,7 +324,7 @@
             // 
             // btn1
             // 
-            btn1.Location = new System.Drawing.Point(609, 65);
+            btn1.Location = new System.Drawing.Point(595, 17);
             btn1.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btn1.Name = "btn1";
             btn1.Size = new System.Drawing.Size(217, 45);
@@ -344,7 +344,7 @@
             tprint.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             tprint.Name = "tprint";
             tprint.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            tprint.Size = new System.Drawing.Size(853, 708);
+            tprint.Size = new System.Drawing.Size(854, 570);
             tprint.TabIndex = 1;
             tprint.Text = "הדפסה פרטנית";
             // 
@@ -356,13 +356,13 @@
             lstFolder.Location = new System.Drawing.Point(307, 7);
             lstFolder.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             lstFolder.Name = "lstFolder";
-            lstFolder.Size = new System.Drawing.Size(534, 213);
+            lstFolder.Size = new System.Drawing.Size(534, 194);
             lstFolder.TabIndex = 4;
             lstFolder.SelectedIndexChanged += lstFolder_SelectedIndexChanged;
             // 
             // btnPrint
             // 
-            btnPrint.Location = new System.Drawing.Point(357, 654);
+            btnPrint.Location = new System.Drawing.Point(351, 529);
             btnPrint.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnPrint.Name = "btnPrint";
             btnPrint.Size = new System.Drawing.Size(156, 27);
@@ -381,7 +381,7 @@
             groupBox1.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             groupBox1.Name = "groupBox1";
             groupBox1.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            groupBox1.Size = new System.Drawing.Size(842, 398);
+            groupBox1.Size = new System.Drawing.Size(842, 285);
             groupBox1.TabIndex = 0;
             groupBox1.TabStop = false;
             groupBox1.Text = "תיקיה 1";
@@ -394,7 +394,7 @@
             chbox1.Location = new System.Drawing.Point(4, 29);
             chbox1.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             chbox1.Name = "chbox1";
-            chbox1.Size = new System.Drawing.Size(830, 324);
+            chbox1.Size = new System.Drawing.Size(830, 228);
             chbox1.TabIndex = 1;
             chbox1.ThreeDCheckBoxes = true;
             // 
@@ -437,13 +437,34 @@
             tconfig.Location = new System.Drawing.Point(4, 30);
             tconfig.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             tconfig.Name = "tconfig";
-            tconfig.Size = new System.Drawing.Size(853, 708);
+            tconfig.Size = new System.Drawing.Size(854, 570);
             tconfig.TabIndex = 2;
             tconfig.Text = "קונפיגורציה";
             // 
+            // cboPrinter9
+            // 
+            cboPrinter9.FormattingEnabled = true;
+            cboPrinter9.Location = new System.Drawing.Point(314, 473);
+            cboPrinter9.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            cboPrinter9.Name = "cboPrinter9";
+            cboPrinter9.Size = new System.Drawing.Size(286, 26);
+            cboPrinter9.TabIndex = 37;
+            cboPrinter9.SelectedIndexChanged += cboPrinter9_SelectedIndexChanged;
+            // 
+            // label14
+            // 
+            label14.AutoSize = true;
+            label14.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            label14.Location = new System.Drawing.Point(636, 476);
+            label14.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            label14.Name = "label14";
+            label14.Size = new System.Drawing.Size(179, 19);
+            label14.TabIndex = 36;
+            label14.Text = "מדפסת להדפסת חשבונות";
+            // 
             // txtSrcMinutes
             // 
-            txtSrcMinutes.Location = new System.Drawing.Point(72, 658);
+            txtSrcMinutes.Location = new System.Drawing.Point(76, 515);
             txtSrcMinutes.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             txtSrcMinutes.Name = "txtSrcMinutes";
             txtSrcMinutes.Size = new System.Drawing.Size(116, 26);
@@ -453,7 +474,7 @@
             // 
             label13.AutoSize = true;
             label13.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label13.Location = new System.Drawing.Point(238, 657);
+            label13.Location = new System.Drawing.Point(242, 514);
             label13.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label13.Name = "label13";
             label13.Size = new System.Drawing.Size(173, 19);
@@ -462,7 +483,7 @@
             // 
             // btnBrowseSrc
             // 
-            btnBrowseSrc.Location = new System.Drawing.Point(630, 26);
+            btnBrowseSrc.Location = new System.Drawing.Point(629, 7);
             btnBrowseSrc.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnBrowseSrc.Name = "btnBrowseSrc";
             btnBrowseSrc.Size = new System.Drawing.Size(88, 27);
@@ -473,7 +494,7 @@
             // 
             // txtSource
             // 
-            txtSource.Location = new System.Drawing.Point(26, 29);
+            txtSource.Location = new System.Drawing.Point(25, 10);
             txtSource.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             txtSource.Name = "txtSource";
             txtSource.Size = new System.Drawing.Size(577, 26);
@@ -483,7 +504,7 @@
             // 
             label12.AutoSize = true;
             label12.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label12.Location = new System.Drawing.Point(727, 31);
+            label12.Location = new System.Drawing.Point(726, 12);
             label12.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label12.Name = "label12";
             label12.Size = new System.Drawing.Size(83, 19);
@@ -493,7 +514,7 @@
             // cboPrinter33
             // 
             cboPrinter33.FormattingEnabled = true;
-            cboPrinter33.Location = new System.Drawing.Point(316, 561);
+            cboPrinter33.Location = new System.Drawing.Point(313, 429);
             cboPrinter33.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             cboPrinter33.Name = "cboPrinter33";
             cboPrinter33.Size = new System.Drawing.Size(286, 26);
@@ -503,7 +524,7 @@
             // cboPrinter22
             // 
             cboPrinter22.FormattingEnabled = true;
-            cboPrinter22.Location = new System.Drawing.Point(316, 509);
+            cboPrinter22.Location = new System.Drawing.Point(313, 385);
             cboPrinter22.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             cboPrinter22.Name = "cboPrinter22";
             cboPrinter22.Size = new System.Drawing.Size(286, 26);
@@ -513,7 +534,7 @@
             // cboPrinter11
             // 
             cboPrinter11.FormattingEnabled = true;
-            cboPrinter11.Location = new System.Drawing.Point(316, 460);
+            cboPrinter11.Location = new System.Drawing.Point(313, 342);
             cboPrinter11.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             cboPrinter11.Name = "cboPrinter11";
             cboPrinter11.Size = new System.Drawing.Size(286, 26);
@@ -524,7 +545,7 @@
             // 
             label9.AutoSize = true;
             label9.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label9.Location = new System.Drawing.Point(650, 564);
+            label9.Location = new System.Drawing.Point(647, 432);
             label9.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label9.Name = "label9";
             label9.Size = new System.Drawing.Size(167, 19);
@@ -535,7 +556,7 @@
             // 
             label10.AutoSize = true;
             label10.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label10.Location = new System.Drawing.Point(650, 512);
+            label10.Location = new System.Drawing.Point(647, 388);
             label10.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label10.Name = "label10";
             label10.Size = new System.Drawing.Size(167, 19);
@@ -546,7 +567,7 @@
             // 
             label11.AutoSize = true;
             label11.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label11.Location = new System.Drawing.Point(650, 460);
+            label11.Location = new System.Drawing.Point(647, 342);
             label11.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label11.Name = "label11";
             label11.Size = new System.Drawing.Size(167, 19);
@@ -555,7 +576,7 @@
             // 
             // txtTimer
             // 
-            txtTimer.Location = new System.Drawing.Point(486, 658);
+            txtTimer.Location = new System.Drawing.Point(490, 515);
             txtTimer.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             txtTimer.Name = "txtTimer";
             txtTimer.Size = new System.Drawing.Size(116, 26);
@@ -565,7 +586,7 @@
             // 
             label7.AutoSize = true;
             label7.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label7.Location = new System.Drawing.Point(652, 657);
+            label7.Location = new System.Drawing.Point(656, 514);
             label7.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label7.Name = "label7";
             label7.Size = new System.Drawing.Size(158, 19);
@@ -574,7 +595,7 @@
             // 
             // bArchive
             // 
-            bArchive.Location = new System.Drawing.Point(630, 231);
+            bArchive.Location = new System.Drawing.Point(630, 173);
             bArchive.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             bArchive.Name = "bArchive";
             bArchive.Size = new System.Drawing.Size(88, 27);
@@ -585,7 +606,7 @@
             // 
             // txtArchive
             // 
-            txtArchive.Location = new System.Drawing.Point(26, 231);
+            txtArchive.Location = new System.Drawing.Point(26, 173);
             txtArchive.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             txtArchive.Name = "txtArchive";
             txtArchive.Size = new System.Drawing.Size(577, 26);
@@ -595,7 +616,7 @@
             // 
             label6.AutoSize = true;
             label6.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label6.Location = new System.Drawing.Point(721, 235);
+            label6.Location = new System.Drawing.Point(721, 177);
             label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label6.Name = "label6";
             label6.Size = new System.Drawing.Size(89, 19);
@@ -605,7 +626,7 @@
             // cboPrinter3
             // 
             cboPrinter3.FormattingEnabled = true;
-            cboPrinter3.Location = new System.Drawing.Point(316, 410);
+            cboPrinter3.Location = new System.Drawing.Point(313, 302);
             cboPrinter3.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             cboPrinter3.Name = "cboPrinter3";
             cboPrinter3.Size = new System.Drawing.Size(286, 26);
@@ -615,7 +636,7 @@
             // cboPrinter2
             // 
             cboPrinter2.FormattingEnabled = true;
-            cboPrinter2.Location = new System.Drawing.Point(316, 358);
+            cboPrinter2.Location = new System.Drawing.Point(314, 260);
             cboPrinter2.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             cboPrinter2.Name = "cboPrinter2";
             cboPrinter2.Size = new System.Drawing.Size(286, 26);
@@ -625,7 +646,7 @@
             // cboPrinter1
             // 
             cboPrinter1.FormattingEnabled = true;
-            cboPrinter1.Location = new System.Drawing.Point(316, 309);
+            cboPrinter1.Location = new System.Drawing.Point(314, 222);
             cboPrinter1.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             cboPrinter1.Name = "cboPrinter1";
             cboPrinter1.Size = new System.Drawing.Size(286, 26);
@@ -636,7 +657,7 @@
             // 
             label5.AutoSize = true;
             label5.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label5.Location = new System.Drawing.Point(694, 409);
+            label5.Location = new System.Drawing.Point(691, 301);
             label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label5.Name = "label5";
             label5.Size = new System.Drawing.Size(123, 19);
@@ -647,7 +668,7 @@
             // 
             label4.AutoSize = true;
             label4.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label4.Location = new System.Drawing.Point(694, 357);
+            label4.Location = new System.Drawing.Point(692, 259);
             label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label4.Name = "label4";
             label4.Size = new System.Drawing.Size(123, 19);
@@ -658,7 +679,7 @@
             // 
             label3.AutoSize = true;
             label3.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label3.Location = new System.Drawing.Point(694, 308);
+            label3.Location = new System.Drawing.Point(692, 221);
             label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label3.Name = "label3";
             label3.Size = new System.Drawing.Size(123, 19);
@@ -667,7 +688,7 @@
             // 
             // bprint
             // 
-            bprint.Location = new System.Drawing.Point(630, 178);
+            bprint.Location = new System.Drawing.Point(629, 131);
             bprint.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             bprint.Name = "bprint";
             bprint.Size = new System.Drawing.Size(88, 27);
@@ -678,7 +699,7 @@
             // 
             // txtPrint
             // 
-            txtPrint.Location = new System.Drawing.Point(26, 178);
+            txtPrint.Location = new System.Drawing.Point(25, 131);
             txtPrint.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             txtPrint.Name = "txtPrint";
             txtPrint.Size = new System.Drawing.Size(577, 26);
@@ -688,7 +709,7 @@
             // 
             label2.AutoSize = true;
             label2.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label2.Location = new System.Drawing.Point(721, 182);
+            label2.Location = new System.Drawing.Point(720, 135);
             label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label2.Name = "label2";
             label2.Size = new System.Drawing.Size(100, 19);
@@ -697,7 +718,7 @@
             // 
             // butWorkFol
             // 
-            butWorkFol.Location = new System.Drawing.Point(630, 128);
+            butWorkFol.Location = new System.Drawing.Point(627, 87);
             butWorkFol.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             butWorkFol.Name = "butWorkFol";
             butWorkFol.Size = new System.Drawing.Size(88, 27);
@@ -708,7 +729,7 @@
             // 
             // txtWorkFol
             // 
-            txtWorkFol.Location = new System.Drawing.Point(26, 128);
+            txtWorkFol.Location = new System.Drawing.Point(23, 87);
             txtWorkFol.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             txtWorkFol.Name = "txtWorkFol";
             txtWorkFol.Size = new System.Drawing.Size(577, 26);
@@ -718,7 +739,7 @@
             // 
             label1.AutoSize = true;
             label1.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label1.Location = new System.Drawing.Point(734, 133);
+            label1.Location = new System.Drawing.Point(731, 92);
             label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             label1.Name = "label1";
             label1.Size = new System.Drawing.Size(89, 19);
@@ -727,7 +748,7 @@
             // 
             // btnBrowse
             // 
-            btnBrowse.Location = new System.Drawing.Point(630, 76);
+            btnBrowse.Location = new System.Drawing.Point(629, 42);
             btnBrowse.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             btnBrowse.Name = "btnBrowse";
             btnBrowse.Size = new System.Drawing.Size(88, 27);
@@ -738,7 +759,7 @@
             // 
             // txtMain
             // 
-            txtMain.Location = new System.Drawing.Point(26, 79);
+            txtMain.Location = new System.Drawing.Point(25, 45);
             txtMain.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             txtMain.Name = "txtMain";
             txtMain.Size = new System.Drawing.Size(577, 26);
@@ -748,7 +769,7 @@
             // 
             lbl1.AutoSize = true;
             lbl1.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            lbl1.Location = new System.Drawing.Point(727, 81);
+            lbl1.Location = new System.Drawing.Point(726, 47);
             lbl1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             lbl1.Name = "lbl1";
             lbl1.Size = new System.Drawing.Size(95, 19);
@@ -770,7 +791,7 @@
             // button1
             // 
             button1.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            button1.Location = new System.Drawing.Point(30, 826);
+            button1.Location = new System.Drawing.Point(34, 687);
             button1.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             button1.Name = "button1";
             button1.Size = new System.Drawing.Size(88, 27);
@@ -792,33 +813,12 @@
             btnReset.UseVisualStyleBackColor = false;
             btnReset.Click += btnReset_Click;
             // 
-            // cboPrinter9
-            // 
-            cboPrinter9.FormattingEnabled = true;
-            cboPrinter9.Location = new System.Drawing.Point(316, 607);
-            cboPrinter9.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            cboPrinter9.Name = "cboPrinter9";
-            cboPrinter9.Size = new System.Drawing.Size(286, 26);
-            cboPrinter9.TabIndex = 37;
-            cboPrinter9.SelectedIndexChanged += cboPrinter9_SelectedIndexChanged;
-            // 
-            // label14
-            // 
-            label14.AutoSize = true;
-            label14.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            label14.Location = new System.Drawing.Point(638, 610);
-            label14.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            label14.Name = "label14";
-            label14.Size = new System.Drawing.Size(179, 19);
-            label14.TabIndex = 36;
-            label14.Text = "מדפסת להדפסת חשבונות";
-            // 
             // Form1
             // 
             AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             BackColor = System.Drawing.Color.SteelBlue;
-            ClientSize = new System.Drawing.Size(905, 867);
+            ClientSize = new System.Drawing.Size(905, 721);
             Controls.Add(btnReset);
             Controls.Add(button1);
             Controls.Add(label8);

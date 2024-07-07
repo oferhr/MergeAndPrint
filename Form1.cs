@@ -2,6 +2,7 @@
 using SimpleLogger;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing.Imaging;
@@ -30,13 +31,14 @@ namespace MergeAndPrint
         private string CurrentDirectory = null;
         private static bool PrintImageObj;
         int pages = 0;
+        private string ShlomoName;
         System.Drawing.Image printImg;
         public Form1()
         {
             InitializeComponent();
 
 
-
+            ShlomoName = ConfigurationManager.AppSettings["shlomo"].ToString();
             // int.TryParse(ConfigurationManager.AppSettings["WaitSeconds"].ToString(), out timerCounter);
             var printers = GetAllPrinterList();
             cboPrinter1.Items.AddRange(printers.ToArray());
@@ -440,7 +442,7 @@ namespace MergeAndPrint
                 {
                     timerCounter = int.Parse(timeVal);
                 }
-                path1 = Path.Combine(txtMain.Text, "9");
+                path1 = Path.Combine(txtMain.Text, ShlomoName);
                 if (Directory.Exists(path1))
                 {
                     int count = Directory.GetDirectories(path1, "*", SearchOption.TopDirectoryOnly)
@@ -562,7 +564,7 @@ namespace MergeAndPrint
         }
         private void btn9_Click(object sender, EventArgs e)
         {
-            string num = "9";
+            string num = ShlomoName;
             Start(num, null, false);
         }
         private void Start(string num, List<string> sdirs, bool IsMerge = true)
@@ -577,6 +579,7 @@ namespace MergeAndPrint
             btn11.Enabled = false;
             btn22.Enabled = false;
             btn33.Enabled = false;
+            btn9.Enabled = false;
             btnReset.Enabled = false;
             Directory.Delete(txtPrint.Text, true);
             Directory.CreateDirectory(txtPrint.Text);
@@ -629,7 +632,7 @@ namespace MergeAndPrint
         {
 
             var workingDir = Path.Combine(txtWorkFol.Text, num);
-            var lwFiles = Directory.GetFiles(workingDir, "*.*", SearchOption.TopDirectoryOnly);
+            var lwFiles = Directory.GetFiles(workingDir, "*.*", SearchOption.AllDirectories);
             foreach (var file in lwFiles)
             {
                 File.Move(file, Path.Combine(txtPrint.Text, Path.GetFileName(file)));
@@ -645,9 +648,12 @@ namespace MergeAndPrint
                 {
                     logToScreen("מדפיס קובץ  - " + Path.GetFileName(file));
                     Application.DoEvents();
-                    var pdf = PdfDocument.FromFile(file);
-                    pdf.Print(Printer9);
-                    Thread.Sleep(1000);
+                    using (var pdf = PdfDocument.FromFile(file))
+                    {
+                        pdf.Print(Printer9);
+                        Thread.Sleep(1000);
+                    }
+                        
                 }
                 else if (ext == "jpeg" || ext == "jpg" || ext == "tif" || ext == "tiff")
                 {
@@ -708,10 +714,19 @@ namespace MergeAndPrint
             btn11.Enabled = true;
             btn22.Enabled = true;
             btn33.Enabled = true;
+            btn9.Enabled = true;
             chbox1.Enabled = true;
             timerCounter = int.Parse(timeVal);
-            Directory.Delete(txtPrint.Text, true);
-            Directory.CreateDirectory(txtPrint.Text);
+            try
+            {
+                Directory.Delete(txtPrint.Text, true);
+                Directory.CreateDirectory(txtPrint.Text);
+            }
+            catch 
+            {
+                MessageBox.Show("לא ניתן למחוק את תיקיית ההדפסה. נא למחוק ידנית");
+            }
+            
         }
         private void CountDown()
         {
@@ -1023,8 +1038,11 @@ namespace MergeAndPrint
                     }
                     logToScreen("מדפיס קובץ  - " + Path.GetFileName(file));
                     Application.DoEvents();
-                    var pdf = PdfDocument.FromFile(file);
-                    pdf.Print(pprint);
+                    using (var pdf = PdfDocument.FromFile(file))
+                    {
+                        pdf.Print(pprint);
+                    }
+                        
                     Thread.Sleep(1000);
                     //var doc = pdf.GetPrintDocument();
                     //doc.EndPrint += Doc_EndPrint;
@@ -1048,25 +1066,28 @@ namespace MergeAndPrint
         //}
         private void PrintImage(string fileName)
         {
-            printImg = System.Drawing.Image.FromFile(fileName);
-            var h = printImg.Height;
-            var w = printImg.Width;
-            pages = 0;
-            using (PrintDocument printDoc = new PrintDocument())
+            using (printImg = System.Drawing.Image.FromFile(fileName))
             {
-                PrintImageObj = true;
-                if (!printDoc.PrinterSettings.IsValid)
+                var h = printImg.Height;
+                var w = printImg.Width;
+                pages = 0;
+                using (PrintDocument printDoc = new PrintDocument())
                 {
-                    MessageBox.Show(@"Printer settings are invalid");
-                    return;
+                    PrintImageObj = true;
+                    if (!printDoc.PrinterSettings.IsValid)
+                    {
+                        MessageBox.Show(@"Printer settings are invalid");
+                        return;
+                    }
+                    printDoc.PrinterSettings.PrinterName = Printer9;
+                    printDoc.PrintPage += TiffPrintPage;
+                    printDoc.DefaultPageSettings.Landscape = w > h;
+                    printDoc.EndPrint += PrintTiffFileEndded;
+                    printDoc.PrintController = new StandardPrintController();
+                    printDoc.Print();
                 }
-                printDoc.PrinterSettings.PrinterName = Printer9;
-                printDoc.PrintPage += TiffPrintPage;
-                printDoc.DefaultPageSettings.Landscape = w > h;
-                printDoc.EndPrint += PrintTiffFileEndded;
-                printDoc.PrintController = new StandardPrintController();
-                printDoc.Print();
             }
+                
         }
         private void PrintFile(string fileName)
         {
