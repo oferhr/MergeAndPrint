@@ -89,6 +89,7 @@
             label8 = new System.Windows.Forms.Label();
             button1 = new System.Windows.Forms.Button();
             btnReset = new System.Windows.Forms.Button();
+            btnSaveConfig = new System.Windows.Forms.Button();
             tabMain.SuspendLayout();
             tmain.SuspendLayout();
             tprint.SuspendLayout();
@@ -401,6 +402,7 @@
             // tconfig
             // 
             tconfig.BackColor = System.Drawing.Color.WhiteSmoke;
+            tconfig.Controls.Add(btnSaveConfig);
             tconfig.Controls.Add(cboPrinter9);
             tconfig.Controls.Add(label14);
             tconfig.Controls.Add(txtSrcMinutes);
@@ -440,6 +442,19 @@
             tconfig.Size = new System.Drawing.Size(854, 570);
             tconfig.TabIndex = 2;
             tconfig.Text = "קונפיגורציה";
+            // 
+            // btnSaveConfig
+            // 
+            btnSaveConfig.BackColor = System.Drawing.SystemColors.ActiveCaption;
+            btnSaveConfig.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            btnSaveConfig.Location = new System.Drawing.Point(40, 468);
+            btnSaveConfig.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnSaveConfig.Name = "btnSaveConfig";
+            btnSaveConfig.Size = new System.Drawing.Size(200, 35);
+            btnSaveConfig.TabIndex = 38;
+            btnSaveConfig.Text = "שמירת הגדרות";
+            btnSaveConfig.UseVisualStyleBackColor = false;
+            btnSaveConfig.Click += btnSaveConfig_Click;
             // 
             // cboPrinter9
             // 
@@ -893,6 +908,7 @@
         private System.Windows.Forms.ListBox lstFolder;
         private System.Windows.Forms.Button btnReset;
         private System.Windows.Forms.Button btnBrowseSrc;
+        private System.Windows.Forms.Button btnSaveConfig;
         private System.Windows.Forms.TextBox txtSource;
         private System.Windows.Forms.Label label12;
         private System.Windows.Forms.TextBox txtSrcMinutes;
