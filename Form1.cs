@@ -29,6 +29,7 @@ namespace MergeAndPrint
         private string timeVal;
         private static string srcMinVal;
         private string CurrentDirectory = null;
+        private bool _loadingConfig;
         private static bool PrintImageObj;
         int pages = 0;
         private string ShlomoName;
@@ -49,162 +50,96 @@ namespace MergeAndPrint
             cboPrinter33.Items.AddRange(printers.ToArray());
             cboPrinter9.Items.AddRange(printers.ToArray());
 
-            timeVal = Properties.Settings.Default.TimerPeriod;
-            if (!string.IsNullOrEmpty(timeVal))
-            {
-                txtTimer.Text = timeVal;
-            }
-            else
-            {
-                timeVal = "30";
-                txtTimer.Text = "30";
-            }
-            srcMinVal = Properties.Settings.Default.SrcMinPeriod;
-            if (!string.IsNullOrEmpty(srcMinVal))
-            {
-                txtSrcMinutes.Text = srcMinVal;
-            }
-            else
-            {
-                srcMinVal = "5";
-                txtSrcMinutes.Text = "5";
-            }
-            var dirsrcPath = Properties.Settings.Default.SourcePath;
-            if (!string.IsNullOrEmpty(dirsrcPath))
-            {
-                txtSource.Text = dirsrcPath;
-            }
-            var dirmPath = Properties.Settings.Default.MainPath;
-            if (!string.IsNullOrEmpty(dirmPath))
-            {
-                txtMain.Text = dirmPath;
-            }
-            var dirwPath = Properties.Settings.Default.WorkingPath;
-            if (!string.IsNullOrEmpty(dirwPath))
-            {
-                txtWorkFol.Text = dirwPath;
-            }
-            var dirpPath = Properties.Settings.Default.PrintPath;
-            if (!string.IsNullOrEmpty(dirpPath))
-            {
-                txtPrint.Text = dirpPath;
-            }
-            var diraPath = Properties.Settings.Default.ArchivePath;
-            if (!string.IsNullOrEmpty(diraPath))
-            {
-                txtArchive.Text = diraPath;
-            }
-
-            var dirPrinter1 = Properties.Settings.Default.Printer1;
-            var counter = 0;
-            var counter1 = 0;
-            if (!string.IsNullOrEmpty(dirPrinter1))
-            {
-                Printer1 = dirPrinter1;
-                foreach (var printer in PrinterSettings.InstalledPrinters)
-                {
-                    if (printer.ToString() == dirPrinter1)
-                        counter1 = counter;
-
-                    counter++;
-                }
-                cboPrinter1.SelectedIndex = counter1;
-            }
-            var dirPrinter2 = Properties.Settings.Default.Printer2;
-            if (!string.IsNullOrEmpty(dirPrinter2))
-            {
-                Printer2 = dirPrinter2;
-                counter = 0;
-                counter1 = 0;
-                foreach (var printer in PrinterSettings.InstalledPrinters)
-                {
-                    if (printer.ToString() == dirPrinter2)
-                        counter1 = counter;
-
-                    counter++;
-                }
-                cboPrinter2.SelectedIndex = counter1;
-
-            }
-            var dirPrinter3 = Properties.Settings.Default.Printer3;
-            if (!string.IsNullOrEmpty(dirPrinter3))
-            {
-                Printer3 = dirPrinter3;
-                counter = 0;
-                counter1 = 0;
-                foreach (var printer in PrinterSettings.InstalledPrinters)
-                {
-                    if (printer.ToString() == dirPrinter3)
-                        counter1 = counter;
-
-                    counter++;
-                }
-                cboPrinter3.SelectedIndex = counter1;
-            }
-            var dirPrinter11 = Properties.Settings.Default.Printer11;
-            if (!string.IsNullOrEmpty(dirPrinter11))
-            {
-                Printer11 = dirPrinter11;
-                counter = 0;
-                counter1 = 0;
-                foreach (var printer in PrinterSettings.InstalledPrinters)
-                {
-                    if (printer.ToString() == dirPrinter11)
-                        counter1 = counter;
-
-                    counter++;
-                }
-                cboPrinter11.SelectedIndex = counter1;
-            }
-            var dirPrinter22 = Properties.Settings.Default.Printer22;
-            if (!string.IsNullOrEmpty(dirPrinter22))
-            {
-                Printer22 = dirPrinter22;
-                counter = 0;
-                counter1 = 0;
-                foreach (var printer in PrinterSettings.InstalledPrinters)
-                {
-                    if (printer.ToString() == dirPrinter22)
-                        counter1 = counter;
-
-                    counter++;
-                }
-                cboPrinter22.SelectedIndex = counter1;
-            }
-            var dirPrinter33 = Properties.Settings.Default.Printer33;
-            if (!string.IsNullOrEmpty(dirPrinter33))
-            {
-                Printer33 = dirPrinter33;
-                counter = 0;
-                counter1 = 0;
-                foreach (var printer in PrinterSettings.InstalledPrinters)
-                {
-                    if (printer.ToString() == dirPrinter33)
-                        counter1 = counter;
-
-                    counter++;
-                }
-                cboPrinter33.SelectedIndex = counter1;
-            }
-            var dirPrinter9 = Properties.Settings.Default.Printer9;
-            if (!string.IsNullOrEmpty(dirPrinter9))
-            {
-                Printer9 = dirPrinter9;
-                counter = 0;
-                counter1 = 0;
-                foreach (var printer in PrinterSettings.InstalledPrinters)
-                {
-                    if (printer.ToString() == dirPrinter9)
-                        counter1 = counter;
-
-                    counter++;
-                }
-                cboPrinter9.SelectedIndex = counter1;
-            }
+            LoadConfigToScreen();
 
             updateScreen();
             updateDirectories();
         }
+        /// <summary>
+        /// טעינת ההגדרות מקובץ config.json אל מסך הקונפיגורציה.
+        /// </summary>
+        private void LoadConfigToScreen()
+        {
+            _loadingConfig = true;
+            try
+            {
+                var cfg = AppConfig.Current;
+
+                timeVal = string.IsNullOrEmpty(cfg.TimerPeriod) ? "30" : cfg.TimerPeriod;
+                txtTimer.Text = timeVal;
+
+                srcMinVal = string.IsNullOrEmpty(cfg.SrcMinPeriod) ? "5" : cfg.SrcMinPeriod;
+                txtSrcMinutes.Text = srcMinVal;
+
+                txtSource.Text = cfg.SourcePath;
+                txtMain.Text = cfg.MainPath;
+                txtWorkFol.Text = cfg.WorkingPath;
+                txtPrint.Text = cfg.PrintPath;
+                txtArchive.Text = cfg.ArchivePath;
+
+                Printer1 = SelectPrinter(cboPrinter1, cfg.Printer1);
+                Printer2 = SelectPrinter(cboPrinter2, cfg.Printer2);
+                Printer3 = SelectPrinter(cboPrinter3, cfg.Printer3);
+                Printer11 = SelectPrinter(cboPrinter11, cfg.Printer11);
+                Printer22 = SelectPrinter(cboPrinter22, cfg.Printer22);
+                Printer33 = SelectPrinter(cboPrinter33, cfg.Printer33);
+                Printer9 = SelectPrinter(cboPrinter9, cfg.Printer9);
+            }
+            finally
+            {
+                _loadingConfig = false;
+            }
+        }
+
+        /// <summary>
+        /// בחירת המדפסת ברשימה לפי שמה בקובץ ההגדרות.
+        /// אם המדפסת אינה מותקנת במחשב זה, הרשימה נשארת ריקה והשם שבקובץ נשמר כפי שהוא.
+        /// </summary>
+        private string SelectPrinter(ComboBox combo, string printerName)
+        {
+            if (string.IsNullOrEmpty(printerName))
+            {
+                combo.SelectedIndex = -1;
+                return null;
+            }
+
+            var index = combo.FindStringExact(printerName);
+            combo.SelectedIndex = index;
+            if (index < 0)
+                SimpleLogger.SimpleLog.Log("מדפסת מקובץ ההגדרות אינה מותקנת במחשב: " + printerName,
+                    SimpleLogger.SimpleLog.Severity.Warning);
+
+            return printerName;
+        }
+
+        /// <summary>
+        /// שמירת ההגדרות שבמסך לקובץ config.json.
+        /// זו הפעולה היחידה שכותבת לקובץ - שינוי בשדות במסך אינו נשמר עד לחיצה על הכפתור.
+        /// </summary>
+        private void btnSaveConfig_Click(object sender, EventArgs e)
+        {
+            var cfg = AppConfig.Current;
+
+            cfg.SourcePath = txtSource.Text;
+            cfg.MainPath = txtMain.Text;
+            cfg.WorkingPath = txtWorkFol.Text;
+            cfg.PrintPath = txtPrint.Text;
+            cfg.ArchivePath = txtArchive.Text;
+            cfg.TimerPeriod = txtTimer.Text;
+            cfg.SrcMinPeriod = txtSrcMinutes.Text;
+
+            cfg.Printer1 = Printer1 ?? "";
+            cfg.Printer2 = Printer2 ?? "";
+            cfg.Printer3 = Printer3 ?? "";
+            cfg.Printer11 = Printer11 ?? "";
+            cfg.Printer22 = Printer22 ?? "";
+            cfg.Printer33 = Printer33 ?? "";
+            cfg.Printer9 = Printer9 ?? "";
+
+            cfg.Save();
+            MessageBox.Show("ההגדרות נשמרו לקובץ:" + Environment.NewLine + AppConfig.FilePath);
+        }
+
         private void updateScreen()
         {
             lstFolder.Items.Clear();
@@ -218,6 +153,10 @@ namespace MergeAndPrint
         }
         private void btnReset_Click(object sender, EventArgs e)
         {
+            // ההגדרות נטענות מחדש מהקובץ בכל רענון
+            AppConfig.Reload();
+            LoadConfigToScreen();
+
             var nums = new string[] { "1", "2", "3" };
             foreach (var num in nums)
             {
@@ -1269,8 +1208,6 @@ namespace MergeAndPrint
                 if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                 {
                     txtSource.Text = fbd.SelectedPath;
-                    Properties.Settings.Default.SourcePath = fbd.SelectedPath;
-                    Properties.Settings.Default.Save();
                 }
             }
         }
@@ -1283,8 +1220,6 @@ namespace MergeAndPrint
                 if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                 {
                     txtMain.Text = fbd.SelectedPath;
-                    Properties.Settings.Default.MainPath = fbd.SelectedPath;
-                    Properties.Settings.Default.Save();
                 }
             }
         }
@@ -1298,8 +1233,6 @@ namespace MergeAndPrint
                 if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                 {
                     txtWorkFol.Text = fbd.SelectedPath;
-                    Properties.Settings.Default.WorkingPath = fbd.SelectedPath;
-                    Properties.Settings.Default.Save();
                 }
             }
         }
@@ -1313,31 +1246,32 @@ namespace MergeAndPrint
                 if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                 {
                     txtPrint.Text = fbd.SelectedPath;
-                    Properties.Settings.Default.PrintPath = fbd.SelectedPath;
-                    Properties.Settings.Default.Save();
                 }
             }
         }
 
         private void cboPrinter1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Properties.Settings.Default.Printer1 = cboPrinter1.SelectedItem.ToString();
-            Properties.Settings.Default.Save();
+            if (_loadingConfig || cboPrinter1.SelectedItem == null)
+                return;
+
             Printer1 = cboPrinter1.SelectedItem.ToString();
 
         }
 
         private void cboPrinter2_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Properties.Settings.Default.Printer2 = cboPrinter2.SelectedItem.ToString();
-            Properties.Settings.Default.Save();
+            if (_loadingConfig || cboPrinter2.SelectedItem == null)
+                return;
+
             Printer2 = cboPrinter2.SelectedItem.ToString();
         }
 
         private void cboPrinter3_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Properties.Settings.Default.Printer3 = cboPrinter3.SelectedItem.ToString();
-            Properties.Settings.Default.Save();
+            if (_loadingConfig || cboPrinter3.SelectedItem == null)
+                return;
+
             Printer3 = cboPrinter3.SelectedItem.ToString();
         }
 
@@ -1350,8 +1284,6 @@ namespace MergeAndPrint
                 if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(fbd.SelectedPath))
                 {
                     txtArchive.Text = fbd.SelectedPath;
-                    Properties.Settings.Default.ArchivePath = fbd.SelectedPath;
-                    Properties.Settings.Default.Save();
                 }
             }
         }
@@ -1362,9 +1294,8 @@ namespace MergeAndPrint
                 MessageBox.Show("פרטים חסרים בלשונית קונפיגורציה");
                 return false;
             }
-            Properties.Settings.Default.TimerPeriod = txtTimer.Text;
-            Properties.Settings.Default.SrcMinPeriod = txtSrcMinutes.Text;
-            Properties.Settings.Default.Save();
+            timeVal = txtTimer.Text;
+            srcMinVal = txtSrcMinutes.Text;
             return true;
         }
 
@@ -1407,29 +1338,33 @@ namespace MergeAndPrint
 
         private void cboPrinter11_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Properties.Settings.Default.Printer11 = cboPrinter11.SelectedItem.ToString();
-            Properties.Settings.Default.Save();
+            if (_loadingConfig || cboPrinter11.SelectedItem == null)
+                return;
+
             Printer11 = cboPrinter11.SelectedItem.ToString();
         }
 
         private void cboPrinter22_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Properties.Settings.Default.Printer22 = cboPrinter22.SelectedItem.ToString();
-            Properties.Settings.Default.Save();
+            if (_loadingConfig || cboPrinter22.SelectedItem == null)
+                return;
+
             Printer22 = cboPrinter22.SelectedItem.ToString();
         }
 
         private void cboPrinter33_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Properties.Settings.Default.Printer33 = cboPrinter33.SelectedItem.ToString();
-            Properties.Settings.Default.Save();
+            if (_loadingConfig || cboPrinter33.SelectedItem == null)
+                return;
+
             Printer33 = cboPrinter33.SelectedItem.ToString();
         }
 
         private void cboPrinter9_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Properties.Settings.Default.Printer9 = cboPrinter9.SelectedItem.ToString();
-            Properties.Settings.Default.Save();
+            if (_loadingConfig || cboPrinter9.SelectedItem == null)
+                return;
+
             Printer9 = cboPrinter9.SelectedItem.ToString();
         }
     }
