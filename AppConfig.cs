@@ -66,23 +66,29 @@ namespace MergeAndPrint
         {
             try
             {
-                if (File.Exists(FilePath))
+                string json;
+                try
                 {
-                    var json = File.ReadAllText(FilePath);
-                    var cfg = JsonSerializer.Deserialize<AppConfig>(json, JsonOptions);
-                    if (cfg != null)
-                        return cfg;
+                    json = File.ReadAllText(FilePath);
                 }
+                catch (FileNotFoundException)
+                {
+                    // Only migrate when config.json is absent, never when it cannot be read.
+                    var migrated = MigrateFromUserSettings();
+                    migrated.Save();
+                    return migrated;
+                }
+
+                var cfg = JsonSerializer.Deserialize<AppConfig>(json, JsonOptions);
+                if (cfg == null)
+                    throw new JsonException("Configuration must contain a JSON object.");
+                return cfg;
             }
             catch (Exception ex)
             {
                 SimpleLogger.SimpleLog.Log(ex);
+                throw;
             }
-
-            // אין קובץ JSON - העברה חד פעמית מההגדרות הישנות של user.config
-            var migrated = MigrateFromUserSettings();
-            migrated.Save();
-            return migrated;
         }
 
         private static AppConfig MigrateFromUserSettings()
@@ -126,6 +132,7 @@ namespace MergeAndPrint
             catch (Exception ex)
             {
                 SimpleLogger.SimpleLog.Log(ex);
+                throw;
             }
         }
     }
