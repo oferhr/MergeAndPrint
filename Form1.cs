@@ -118,25 +118,36 @@ namespace MergeAndPrint
         /// </summary>
         private void btnSaveConfig_Click(object sender, EventArgs e)
         {
-            var cfg = AppConfig.Current;
+            try
+            {
+                var cfg = AppConfig.Current;
 
-            cfg.SourcePath = txtSource.Text;
-            cfg.MainPath = txtMain.Text;
-            cfg.WorkingPath = txtWorkFol.Text;
-            cfg.PrintPath = txtPrint.Text;
-            cfg.ArchivePath = txtArchive.Text;
-            cfg.TimerPeriod = txtTimer.Text;
-            cfg.SrcMinPeriod = txtSrcMinutes.Text;
+                cfg.SourcePath = txtSource.Text;
+                cfg.MainPath = txtMain.Text;
+                cfg.WorkingPath = txtWorkFol.Text;
+                cfg.PrintPath = txtPrint.Text;
+                cfg.ArchivePath = txtArchive.Text;
+                cfg.TimerPeriod = txtTimer.Text;
+                cfg.SrcMinPeriod = txtSrcMinutes.Text;
 
-            cfg.Printer1 = Printer1 ?? "";
-            cfg.Printer2 = Printer2 ?? "";
-            cfg.Printer3 = Printer3 ?? "";
-            cfg.Printer11 = Printer11 ?? "";
-            cfg.Printer22 = Printer22 ?? "";
-            cfg.Printer33 = Printer33 ?? "";
-            cfg.Printer9 = Printer9 ?? "";
+                cfg.Printer1 = Printer1 ?? "";
+                cfg.Printer2 = Printer2 ?? "";
+                cfg.Printer3 = Printer3 ?? "";
+                cfg.Printer11 = Printer11 ?? "";
+                cfg.Printer22 = Printer22 ?? "";
+                cfg.Printer33 = Printer33 ?? "";
+                cfg.Printer9 = Printer9 ?? "";
 
-            cfg.Save();
+                cfg.Save();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("שמירת ההגדרות נכשלה:" + Environment.NewLine + AppConfig.FilePath
+                    + Environment.NewLine + ex.Message, "שגיאה בשמירת הגדרות",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             MessageBox.Show("ההגדרות נשמרו לקובץ:" + Environment.NewLine + AppConfig.FilePath);
         }
 
@@ -154,7 +165,18 @@ namespace MergeAndPrint
         private void btnReset_Click(object sender, EventArgs e)
         {
             // ההגדרות נטענות מחדש מהקובץ בכל רענון
-            AppConfig.Reload();
+            try
+            {
+                AppConfig.Reload();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("טעינת ההגדרות נכשלה. הרענון בוטל וההגדרות הנוכחיות נשמרו:" + Environment.NewLine
+                    + AppConfig.FilePath + Environment.NewLine + ex.Message, "שגיאה בטעינת הגדרות",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             LoadConfigToScreen();
 
             var nums = new string[] { "1", "2", "3" };
@@ -173,6 +195,10 @@ namespace MergeAndPrint
         }
         private void SourceToMain(string spath, string mpath)
         {
+            if (!Directory.Exists(spath))
+            {
+                return;
+            }
             try
             {
                 var files = GetRecentFilesInFolder(spath);
@@ -220,6 +246,10 @@ namespace MergeAndPrint
         }
         private void MoveDir(string path, string num)
         {
+            if (!Directory.Exists(path))
+            {
+                return;
+            }
             try
             {
                 var dirs = Directory.GetDirectories(path);
