@@ -30,6 +30,7 @@ namespace MergeAndPrint
         // True from the start of a run until its countdown ends or it fails. DoEvents lets clicks through
         // mid-run, so every entry point checks this before touching any folder.
         private bool _running;
+        private Stopwatch runStopwatch = new Stopwatch();
         private int timerCounter = 30;
         private string timeVal;
         private static string srcMinVal;
@@ -60,6 +61,7 @@ namespace MergeAndPrint
             cboPrinter9.Items.AddRange(printers.ToArray());
 
             LoadConfigToScreen();
+            LogConfiguration();
 
             updateScreen();
             updateDirectories();
@@ -98,6 +100,17 @@ namespace MergeAndPrint
             {
                 _loadingConfig = false;
             }
+        }
+
+        /// <summary>
+        /// Write the active folders and printers to the log, so a log file shows what the app was set up to do.
+        /// </summary>
+        private void LogConfiguration()
+        {
+            SimpleLog.Info($"Config: source='{txtSource.Text}', main='{txtMain.Text}', working='{txtWorkFol.Text}', " +
+                $"print='{txtPrint.Text}', archive='{txtArchive.Text}', timer={timeVal}s, srcMinutes={srcMinVal}, shlomo='{ShlomoName}'");
+            SimpleLog.Info($"Printers: 1='{Printer1}', 2='{Printer2}', 3='{Printer3}', 1_999='{Printer11}', " +
+                $"2_999='{Printer22}', 3_999='{Printer33}', 9='{Printer9}'");
         }
 
         /// <summary>
@@ -199,6 +212,8 @@ namespace MergeAndPrint
                 return;
             }
 
+            SimpleLog.Info("Refresh started");
+            LogConfiguration();
             var nums = new string[] { "1", "2", "3" };
             foreach (var num in nums)
             {
@@ -208,7 +223,7 @@ namespace MergeAndPrint
                 var spath = Path.Combine(txtSource.Text, num);
                 SourceToMain(spath, mpath);
             }
-            //txtDetails.Clear();
+            SimpleLog.Info("Refresh finished");
             updateScreen();
             updateDirectories();
             Clean();
@@ -241,6 +256,7 @@ namespace MergeAndPrint
                         Directory.CreateDirectory(dirDest);
                     }
                 }
+                int moved = 0, skipped = 0;
                 foreach (var file in files)
                 {
                     var dest = getDestPathForFile(file, mpath);
@@ -248,11 +264,20 @@ namespace MergeAndPrint
                     if (!File.Exists(dest))
                     {
                         File.Move(file, dest);
+                        moved++;
+                        SimpleLog.Info($"Refresh: moved '{file}' -> '{dest}'");
+                    }
+                    else
+                    {
+                        skipped++;
+                        SimpleLog.Warning($"Refresh: skipped '{file}', already exists at '{dest}'");
                     }
                 }
+                SimpleLog.Info($"Refresh '{spath}': {moved} moved, {skipped} skipped (already in main)");
             }
             catch (Exception ex)
             {
+                SimpleLog.Error($"Refresh failed for '{spath}' -> '{mpath}'");
                 SimpleLogger.SimpleLog.Log(ex);
             }
 
@@ -292,12 +317,13 @@ namespace MergeAndPrint
                             string targetFile = Path.Combine(dest, Path.GetFileName(file));
                             if (File.Exists(targetFile))
                             {
+                                SimpleLog.Warning($"999 routing: replacing existing '{targetFile}'");
                                 File.Delete(targetFile);
                             }
                             File.Move(file, targetFile);
                         }
                         Directory.Delete(dir, true);
-                        //Directory.Move(dir, Path.Combine(Path.Combine(txtMain.Text, num.ToString() + "_999"), Path.GetFileName(dir)));
+                        SimpleLog.Info($"999 routing: moved supplier '{dir}' -> '{dest}'");
                     }
                 }
             }
@@ -507,8 +533,9 @@ namespace MergeAndPrint
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
-                // Handle any exceptions that may occur during directory access
+                // Was Console.WriteLine, which a windowed app never shows.
+                SimpleLog.Error($"Refresh: could not read source folder '{folderPath}'");
+                SimpleLog.Log(ex);
             }
         }
 
@@ -519,6 +546,8 @@ namespace MergeAndPrint
 
         private void logToScreen(string message)
         {
+            // Every on-screen progress step also goes to the log file, so a run can be reconstructed later.
+            SimpleLog.Info(message);
             txtDetails.Text += message + Environment.NewLine;
             txtDetails.SelectionStart = txtDetails.Text.Length;
             txtDetails.ScrollToCaret();
@@ -573,6 +602,9 @@ namespace MergeAndPrint
             }
             _running = true;
             printFailures = 0;
+            runStopwatch = Stopwatch.StartNew();
+            SimpleLog.Info($"Run started: folder='{num}', merge={IsMerge}, printer='{PrinterFor(num)}', " +
+                (sdirs == null ? "all suppliers" : "selected=[" + string.Join(", ", sdirs) + "]"));
             btnPrint.Enabled = false;
             btn1.Enabled = false;
             btn2.Enabled = false;
@@ -642,6 +674,7 @@ namespace MergeAndPrint
             btnPrint.Enabled = true;
             chbox1.Enabled = true;
             _running = false;
+            SimpleLog.Error($"Run FAILED after {runStopwatch.Elapsed.TotalSeconds:0}s; working/print folders left for inspection");
             MessageBox.Show("הפעולה נכשלה, יש לבחון קובץ לוג");
         }
 
@@ -684,6 +717,7 @@ namespace MergeAndPrint
                     else if (ext == "jpeg" || ext == "jpg" || ext == "tif" || ext == "tiff")
                     {
                         PrintImage(file);
+                        SimpleLog.Info($"Printed image ({pages} page(s)) to '{Printer9}': {file}");
                     }
                     else if (BlockedExtensions.Contains(ext))
                     {
@@ -692,6 +726,7 @@ namespace MergeAndPrint
                     else
                     {
                         PrintFile(file);
+                        SimpleLog.Info($"Sent to the shell print handler for '{Printer9}': {file}");
                     }
                 }
                 catch (Exception ex)
@@ -779,6 +814,8 @@ namespace MergeAndPrint
                 btnPrint.Enabled = true;
                 chbox1.Enabled = true;
                 _running = false;
+                SimpleLog.Info($"Run finished after {runStopwatch.Elapsed.TotalSeconds:0}s: " +
+                    (printFailures > 0 ? $"{printFailures} print error(s)" : "success"));
                 updateScreen();
                 if (printFailures > 0)
                     MessageBox.Show("הפעולה הסתיימה עם " + printFailures + " שגיאות הדפסה, יש לבחון קובץ לוג");
@@ -1044,6 +1081,21 @@ namespace MergeAndPrint
             return parts.Length >= 2 ? parts[0] + "_" + parts[1] : Path.GetFileNameWithoutExtension(file);
         }
 
+        /// <summary>Printer configured for a folder (Shlomo's folder uses Printer9; unknown folders fall back to Printer1).</summary>
+        private string PrinterFor(string num)
+        {
+            switch (num)
+            {
+                case "1": return Printer1;
+                case "2": return Printer2;
+                case "3": return Printer3;
+                case "1_999": return Printer11;
+                case "2_999": return Printer22;
+                case "3_999": return Printer33;
+                default: return num == ShlomoName ? Printer9 : Printer1;
+            }
+        }
+
         private void Print(string num)
         {
             var printingDir = txtPrint.Text;
@@ -1055,31 +1107,7 @@ namespace MergeAndPrint
             {
                 try
                 {
-                    var pprint = string.Empty;
-                    switch (num)
-                    {
-                        case "1":
-                            pprint = Printer1;
-                            break;
-                        case "2":
-                            pprint = Printer2;
-                            break;
-                        case "3":
-                            pprint = Printer3;
-                            break;
-                        case "1_999":
-                            pprint = Printer11;
-                            break;
-                        case "2_999":
-                            pprint = Printer22;
-                            break;
-                        case "3_999":
-                            pprint = Printer33;
-                            break;
-                        default:
-                            pprint = Printer1;
-                            break;
-                    }
+                    var pprint = PrinterFor(num);
                     logToScreen("מדפיס קובץ  - " + Path.GetFileName(file));
                     Application.DoEvents();
                     using (var pdf = PdfDocument.FromFile(file))
