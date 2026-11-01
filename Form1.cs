@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MergeAndPrint
@@ -24,13 +25,16 @@ namespace MergeAndPrint
         private string Printer22;
         private string Printer33;
         private string Printer9;
-        private System.Timers.Timer timer1;
+        private System.Windows.Forms.Timer timer1;
+        private int printFailures;
+        // True from the start of a run until its countdown ends or it fails. DoEvents lets clicks through
+        // mid-run, so every entry point checks this before touching any folder.
+        private bool _running;
         private int timerCounter = 30;
         private string timeVal;
         private static string srcMinVal;
         private string CurrentDirectory = null;
         private bool _loadingConfig;
-        private static bool PrintImageObj;
         int pages = 0;
         private string ShlomoName;
         System.Drawing.Image printImg;
@@ -39,7 +43,12 @@ namespace MergeAndPrint
             InitializeComponent();
 
 
-            ShlomoName = ConfigurationManager.AppSettings["shlomo"].ToString();
+            ShlomoName = ConfigurationManager.AppSettings["shlomo"];
+            if (string.IsNullOrWhiteSpace(ShlomoName))
+            {
+                ShlomoName = "Shlomo-Letters";
+                SimpleLog.Warning("appSettings 'shlomo' is missing from the .dll.config; using " + ShlomoName);
+            }
             // int.TryParse(ConfigurationManager.AppSettings["WaitSeconds"].ToString(), out timerCounter);
             var printers = GetAllPrinterList();
             cboPrinter1.Items.AddRange(printers.ToArray());
@@ -164,6 +173,10 @@ namespace MergeAndPrint
         }
         private void btnReset_Click(object sender, EventArgs e)
         {
+            if (_running)
+            {
+                return;
+            }
             // ההגדרות נטענות מחדש מהקובץ בכל רענון
             try
             {
@@ -178,6 +191,13 @@ namespace MergeAndPrint
             }
 
             LoadConfigToScreen();
+
+            // Refresh is what uses the minimum file age, so validate it here before moving anything.
+            if (!TryParseSrcMinutes(srcMinVal, out _))
+            {
+                MessageBox.Show(SrcMinutesError);
+                return;
+            }
 
             var nums = new string[] { "1", "2", "3" };
             foreach (var num in nums)
@@ -291,7 +311,17 @@ namespace MergeAndPrint
             string num;
             chbox1.Items.Clear();
             var item = lstFolder.SelectedItem;
-            if (item.ToString().Contains("תקיה " + "1_999"))
+            // Clearing the list (updateScreen) raises this event with no selection.
+            if (item == null)
+            {
+                CurrentDirectory = null;
+                return;
+            }
+            if (item.ToString().Contains("תקיה " + "9"))
+            {
+                num = ShlomoName;
+            }
+            else if (item.ToString().Contains("תקיה " + "1_999"))
             {
                 num = "1_999";
             }
@@ -320,7 +350,9 @@ namespace MergeAndPrint
             var lDir = dirInfo.GetDirectories("*", SearchOption.TopDirectoryOnly).ToList();
             foreach (var dir in lDir)
             {
-                chbox1.Items.Add(dir);
+                // Store the folder name only: on .NET 8 DirectoryInfo.ToString() returns the full path,
+                // which made Path.Combine(root, item) ignore root.
+                chbox1.Items.Add(dir.Name);
             }
             groupBox1.Text = "תקיה " + num;
         }
@@ -407,10 +439,6 @@ namespace MergeAndPrint
                 {
                     lb33.Text = " 0 ספקים ";
                 }
-                if (!string.IsNullOrEmpty(timeVal))
-                {
-                    timerCounter = int.Parse(timeVal);
-                }
                 path1 = Path.Combine(txtMain.Text, ShlomoName);
                 if (Directory.Exists(path1))
                 {
@@ -425,11 +453,6 @@ namespace MergeAndPrint
                 {
                     lbl9.Text = " 0 ספקים ";
                 }
-                if (!string.IsNullOrEmpty(timeVal))
-                {
-                    timerCounter = int.Parse(timeVal);
-                }
-
             }
             return dirInfos;
         }
@@ -444,16 +467,18 @@ namespace MergeAndPrint
 
             foreach (string recentFilePath in tmp)
             {
-                string[] recentFileNameParts = Path.GetFileNameWithoutExtension(recentFilePath).Split('_');
-                string key = $"{recentFileNameParts[0]}_{recentFileNameParts[1]}";
+                string key = GetMergeKey(recentFilePath);
+                string supplierDir = Path.GetDirectoryName(recentFilePath);
 
-                // Check if there are matching files in the "restFiles" list
-                List<string> matchingRestFiles = restFiles.Where(filePath => filePath.Contains(key)).ToList();
+                // Bring along the newer files of the same document: same supplier folder and exact same key.
+                // (Contains() on the full path also matched "12_345" and other suppliers' files.)
+                List<string> matchingRestFiles = restFiles.Where(filePath =>
+                    string.Equals(Path.GetDirectoryName(filePath), supplierDir, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(GetMergeKey(filePath), key, StringComparison.OrdinalIgnoreCase)).ToList();
 
                 recentFiles.AddRange(matchingRestFiles);
-
             }
-            return recentFiles.OrderBy(item => item).ToList();
+            return recentFiles.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(item => item).ToList();
         }
         static void GetRecentAndRestFiles(string folderPath, TimeSpan timeSpan, out List<string> recentFiles, out List<string> restFiles)
         {
@@ -538,10 +563,17 @@ namespace MergeAndPrint
         }
         private void Start(string num, List<string> sdirs, bool IsMerge = true)
         {
+            if (_running)
+            {
+                return;
+            }
             if (!CheckProgress())
             {
                 return;
             }
+            _running = true;
+            printFailures = 0;
+            btnPrint.Enabled = false;
             btn1.Enabled = false;
             btn2.Enabled = false;
             btn3.Enabled = false;
@@ -550,58 +582,80 @@ namespace MergeAndPrint
             btn33.Enabled = false;
             btn9.Enabled = false;
             btnReset.Enabled = false;
-            Directory.Delete(txtPrint.Text, true);
-            Directory.CreateDirectory(txtPrint.Text);
-            // isTimerFinnished = false;
+            chbox1.Enabled = false;
 
-
-            logToScreen("מתחיל בתהליך");
-            logToScreen("מעתיק קבצים לארכיון...");
-            archive(num, sdirs);
-            logToScreen("מעתיק קבצים לתקיה זמנית...");
-            SendToWorkingFolder(num, sdirs);
-            if (IsMerge)
+            try
             {
-                logToScreen("מתחיל בהמרת הקבצים...");
-                if (!Convert(num, sdirs))
-                {
-                    MessageBox.Show("הפעולה נכשלה, יש לבחון קובץ לוג");
-                    return;
-                }
-                logToScreen("מתחיל באיחוד הקבצים");
-                if (!Merge(num, sdirs))
-                {
-                    MessageBox.Show("הפעולה נכשלה, יש לבחון קובץ לוג");
-                    return;
-                }
-                logToScreen("מתחיל הדפסת הקבצים");
-                Print(num);
-            }
-            else
-            {
-                logToScreen("מתחיל הדפסת הקבצים");
-                printNoMerge(num);
-            }
+                if (Directory.Exists(txtPrint.Text))
+                    Directory.Delete(txtPrint.Text, true);
+                Directory.CreateDirectory(txtPrint.Text);
 
+                logToScreen("מתחיל בתהליך");
+                logToScreen("מעתיק קבצים לארכיון...");
+                archive(num, sdirs);
+                logToScreen("מעתיק קבצים לתקיה זמנית...");
+                SendToWorkingFolder(num, sdirs);
+                if (IsMerge)
+                {
+                    logToScreen("מתחיל בהמרת הקבצים...");
+                    if (!Convert(num, sdirs))
+                    {
+                        FailRun();
+                        return;
+                    }
+                    logToScreen("מתחיל באיחוד הקבצים");
+                    if (!Merge(num, sdirs))
+                    {
+                        FailRun();
+                        return;
+                    }
+                    logToScreen("מתחיל הדפסת הקבצים");
+                    Print(num);
+                }
+                else
+                {
+                    logToScreen("מתחיל הדפסת הקבצים");
+                    printNoMerge(num, sdirs);
+                }
+            }
+            catch (Exception ex)
+            {
+                SimpleLog.Log(ex);
+                logToScreen("הפעולה נכשלה - " + ex.Message);
+                FailRun();
+                return;
+            }
 
             logToScreen("ממתין לספירה לאחור להסתיים");
             CountDown();
             updateDirectories();
-            //while (!isTimerFinnished)
-            //{
-
-            //}
-            // Thread.Sleep(10000);
-
-
-
         }
 
-        private void printNoMerge(string num)
+        /// <summary>
+        /// A run stopped part-way: tell the user and re-enable Refresh so the app isn't left locked.
+        /// Working/print folders are left as they are for inspection; Refresh cleans up and re-enables the buttons.
+        /// </summary>
+        private void FailRun()
         {
+            lblCountDown.Text = string.Empty;
+            btnReset.Enabled = true;
+            btnPrint.Enabled = true;
+            chbox1.Enabled = true;
+            _running = false;
+            MessageBox.Show("הפעולה נכשלה, יש לבחון קובץ לוג");
+        }
 
+        private void printNoMerge(string num, List<string> sdirs)
+        {
             var workingDir = Path.Combine(txtWorkFol.Text, num);
-            var lwFiles = Directory.GetFiles(workingDir, "*.*", SearchOption.AllDirectories);
+            // With a selection, take only the selected suppliers' folders: leftovers from an earlier
+            // failed run in the working folder must not be printed along with them.
+            var lwFiles = sdirs == null
+                ? Directory.GetFiles(workingDir, "*.*", SearchOption.AllDirectories)
+                : sdirs.Select(d => Path.Combine(workingDir, d))
+                       .Where(Directory.Exists)
+                       .SelectMany(d => Directory.GetFiles(d, "*.*", SearchOption.AllDirectories))
+                       .ToArray();
             foreach (var file in lwFiles)
             {
                 File.Move(file, Path.Combine(txtPrint.Text, Path.GetFileName(file)));
@@ -610,68 +664,70 @@ namespace MergeAndPrint
 
             var printingDir = txtPrint.Text;
             var lFiles = Directory.GetFiles(printingDir, "*.*", SearchOption.TopDirectoryOnly);
+            if (lFiles.Length == 0)
+                ReportEmptyBatch();
+
             foreach (var file in lFiles)
             {
-                var ext = Path.GetExtension(file).Split('.')[1].ToLower();
-                if (ext == "pdf")
+                var ext = Path.GetExtension(file).TrimStart('.').ToLowerInvariant();
+                logToScreen("מדפיס קובץ  - " + Path.GetFileName(file));
+                Application.DoEvents();
+                try
                 {
-                    logToScreen("מדפיס קובץ  - " + Path.GetFileName(file));
-                    Application.DoEvents();
-                    using (var pdf = PdfDocument.FromFile(file))
+                    if (ext == "pdf")
                     {
-                        pdf.Print(Printer9);
-                        Thread.Sleep(1000);
+                        using (var pdf = PdfDocument.FromFile(file))
+                        {
+                            PrintPdf(pdf, Printer9, file);
+                        }
                     }
-                        
-                }
-                else if (ext == "jpeg" || ext == "jpg" || ext == "tif" || ext == "tiff")
-                {
-                    try
+                    else if (ext == "jpeg" || ext == "jpg" || ext == "tif" || ext == "tiff")
                     {
                         PrintImage(file);
-
-                        while (PrintImageObj)
-                        {
-                            Thread.Sleep(500);
-                        }
-
                     }
-                    catch (Exception ex)
+                    else if (BlockedExtensions.Contains(ext))
                     {
-                        SimpleLog.Error("Print image failed");
-                        SimpleLog.Log(ex);
+                        throw new InvalidOperationException("Refusing to print a program/script file: " + file);
                     }
-                    finally
-                    {
-                        Thread.Sleep(1000);
-                    }
-
-                }
-                else
-                {
-                    try
+                    else
                     {
                         PrintFile(file);
-                        while (PrintImageObj)
-                        {
-                            Thread.Sleep(500);
-                        }
                     }
-                    catch (Exception ex)
-                    {
-                        SimpleLog.Error("Print other failed");
-                        SimpleLog.Log(ex);
-                    }
-                    finally
-                    {
-                        Thread.Sleep(1000);
-                    }
-
-
                 }
-
+                catch (Exception ex)
+                {
+                    ReportPrintFailure(file, ex);
+                }
+                finally
+                {
+                    Thread.Sleep(1000);
+                }
             }
-            
+        }
+
+        /// <summary>
+        /// Extensions never handed to the shell: with the PrintTo verb they would at best fail,
+        /// and they must never be run.
+        /// </summary>
+        private static readonly HashSet<string> BlockedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "", "exe", "com", "bat", "cmd", "msi", "msp", "scr", "pif", "lnk", "url",
+            "ps1", "psm1", "vbs", "vbe", "js", "jse", "wsf", "wsh", "hta", "cpl", "reg", "dll", "jar"
+        };
+
+        private void ReportPrintFailure(string file, Exception ex)
+        {
+            printFailures++;
+            SimpleLog.Log(ex);
+            logToScreen("הדפסת קבצים נכשלה לקובץ - " + file);
+            MessageBox.Show("הדפסת קבצים נכשלה לקובץ - " + file + Environment.NewLine + ex.Message);
+        }
+
+        private void ReportEmptyBatch()
+        {
+            printFailures++;
+            SimpleLog.Warning("No files found to print in " + txtPrint.Text);
+            logToScreen("לא נמצאו קבצים להדפסה");
         }
 
         private void Clean()
@@ -684,11 +740,13 @@ namespace MergeAndPrint
             btn22.Enabled = true;
             btn33.Enabled = true;
             btn9.Enabled = true;
+            btnPrint.Enabled = true;
             chbox1.Enabled = true;
-            timerCounter = int.Parse(timeVal);
+            timerCounter = ParseTimer(timeVal);
             try
             {
-                Directory.Delete(txtPrint.Text, true);
+                if (Directory.Exists(txtPrint.Text))
+                    Directory.Delete(txtPrint.Text, true);
                 Directory.CreateDirectory(txtPrint.Text);
             }
             catch 
@@ -700,56 +758,55 @@ namespace MergeAndPrint
         private void CountDown()
         {
             lblTime.Visible = true;
-            timer1 = new System.Timers.Timer();
-            timer1.Enabled = true;
-            timer1.Elapsed += (object sender, System.Timers.ElapsedEventArgs e) =>
+            timerCounter = ParseTimer(timeVal);
+
+            // WinForms timer ticks on the UI thread: no Invoke, no overlapping ticks that skip past zero.
+            timer1?.Stop();
+            timer1?.Dispose();
+            timer1 = new System.Windows.Forms.Timer { Interval = 1000 };
+            timer1.Tick += (sender, e) =>
             {
                 timerCounter--;
-                if (InvokeRequired)
-                {
-                    Invoke(new MethodInvoker(() =>
-                    {
-                        lblCountDown.Text = timerCounter.ToString();
-                    }));
-                }
+                lblCountDown.Text = timerCounter.ToString();
+                if (timerCounter > 0)
+                    return;
+
+                timer1.Stop();
+                lblTime.Visible = false;
+                lblCountDown.Text = string.Empty;
+                logToScreen("מנקה את סביבת העבודה");
+                btnReset.Enabled = true;
+                btnPrint.Enabled = true;
+                chbox1.Enabled = true;
+                _running = false;
+                updateScreen();
+                if (printFailures > 0)
+                    MessageBox.Show("הפעולה הסתיימה עם " + printFailures + " שגיאות הדפסה, יש לבחון קובץ לוג");
                 else
-                {
-                    lblCountDown.Text = timerCounter.ToString();
-                }
-                if (timerCounter == 0)
-                {
-                    timer1.Stop();
-                    if (InvokeRequired)
-                    {
-                        Invoke(new MethodInvoker(() =>
-                        {
-                            lblTime.Visible = false;
-                            lblCountDown.Text = string.Empty;
-                            logToScreen("מנקה את סביבת העבודה");
-                            btnReset.Enabled = true;
-                            updateScreen();
-                            MessageBox.Show("הפעולה הסתיימה בהצלחה");
-                        }));
-                    }
-                    else
-                    {
-                        lblTime.Visible = false;
-                        lblCountDown.Text = string.Empty;
-                        logToScreen("מנקה את סביבת העבודה");
-                        btnReset.Enabled = true;
-                        updateScreen();
-                        MessageBox.Show("הפעולה הסתיימה בהצלחה");
-                    }
-
-
-                }
+                    MessageBox.Show("הפעולה הסתיימה בהצלחה");
             };
-            timer1.Interval = 1000; // 1 second
-
             timer1.Start();
             lblCountDown.Text = timerCounter.ToString();
+        }
 
-            Application.DoEvents();
+        private const string SrcMinutesError = "מספר הדקות בלשונית קונפיגורציה חייב להיות בין 0 ל-10080";
+
+        /// <summary>
+        /// Minimum file age (minutes) for Refresh: a finite number from 0 to one week.
+        /// Rejects text, negatives, NaN and values TimeSpan.FromMinutes would overflow on.
+        /// </summary>
+        internal static bool TryParseSrcMinutes(string value, out double minutes)
+        {
+            return double.TryParse(value, out minutes) && double.IsFinite(minutes)
+                && minutes >= 0 && minutes <= 7 * 24 * 60;
+        }
+
+        /// <summary>
+        /// Countdown length in seconds from the config; falls back to 30 for missing, invalid or non-positive values.
+        /// </summary>
+        private static int ParseTimer(string value)
+        {
+            return int.TryParse(value, out var seconds) && seconds > 0 ? seconds : 30;
         }
 
 
@@ -920,43 +977,49 @@ namespace MergeAndPrint
                 {
                     dirs = Directory.GetDirectories(workingDir);
                 }
-                var files = new List<string>();
                 for (int i = 0; i < dirs.Length; i++)
                 {
                     var dir = dirs[i];
+                    // Convert moved selected 999_ suppliers to the parallel N_999 folder; they wait there and
+                    // aren't missing. Only that exact case is skipped, any other missing folder still fails.
+                    if (isPicked && !Directory.Exists(dir) && !num.EndsWith("999")
+                        && Path.GetFileName(dir).StartsWith("999_"))
+                    {
+                        logToScreen("הספק הועבר לתקיית 999 - " + Path.GetFileName(dir));
+                        continue;
+                    }
                     logToScreen("מתחיל באיחוד קבצים לתקיה - " + Path.GetFileName(dir));
                     var lFiles = Directory.GetFiles(dir, "*.pdf", SearchOption.TopDirectoryOnly);
-                    files.Clear();
-                    var names = new List<string>();
-                    foreach (var lfile in lFiles)
-                    {
-                        files.Add(lfile);
-                        var fn = Path.GetFileName(Path.GetDirectoryName(lfile)) + "-" + Path.GetFileNameWithoutExtension(lfile).Split('_')[0] + "_" + Path.GetFileNameWithoutExtension(lfile).Split('_')[1];
-                        names.Add(fn);
-                    }
-                    var unique_items = new HashSet<string>(names);
-                    var pdfDocuments = new List<PdfDocument>();
-                    var dic = new Dictionary<string, List<string>>();
-                    foreach (string s in unique_items)
-                    {
-                        var fname = Path.GetFileNameWithoutExtension(s).Split('-')[1];
-                        var sorted = files.FindAll(f => f.Contains(fname)).OrderBy(o => o).ToList();
-                        dic[s] = sorted;
-                    }
-                    foreach (string s in dic.Keys)
-                    {
+                    var supplier = Path.GetFileName(dir);
 
-                        logToScreen("מאחד קובץ - " + s + ".pdf");
-                        var mergeName = s;
-                        var arr = dic[s];
-                        foreach (var path in arr)
+                    // Group by the exact document key (first two "_" parts of the file name).
+                    // The old code matched with Contains() on the full path, so "12_34" also took "12_345",
+                    // and a supplier name containing '-' or '.' broke the key.
+                    var groups = lFiles
+                        .GroupBy(f => GetMergeKey(f), StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var group in groups)
+                    {
+                        var mergeName = supplier + "-" + group.Key;
+                        logToScreen("מאחד קובץ - " + mergeName + ".pdf");
+                        var pdfDocuments = new List<PdfDocument>();
+                        try
                         {
-                            pdfDocuments.Add(PdfDocument.FromFile(path));
+                            foreach (var path in group.OrderBy(o => o, StringComparer.OrdinalIgnoreCase))
+                            {
+                                pdfDocuments.Add(PdfDocument.FromFile(path));
+                            }
+                            using (var mergedPdfDocument = PdfDocument.Merge(pdfDocuments))
+                            {
+                                mergedPdfDocument.SaveAs(Path.Combine(txtPrint.Text, mergeName + ".pdf"));
+                            }
                         }
-                        // var newdir = Path.GetDirectoryName(arr[0]);
-                        var mergedPdfDocument = PdfDocument.Merge(pdfDocuments);
-                        mergedPdfDocument.SaveAs(Path.Combine(txtPrint.Text, mergeName + ".pdf"));
-                        pdfDocuments = new List<PdfDocument>();
+                        finally
+                        {
+                            foreach (var doc in pdfDocuments)
+                                doc.Dispose();
+                        }
                     }
                 }
                 Directory.Delete(txtWorkFol.Text, true);
@@ -971,10 +1034,22 @@ namespace MergeAndPrint
                 return false;
             }
         }
+        /// <summary>
+        /// Merge key for a supplier file: "12_34_2.pdf" -> "12_34". A name without a second "_" part
+        /// is merged on its own instead of crashing the whole merge.
+        /// </summary>
+        internal static string GetMergeKey(string file)
+        {
+            var parts = Path.GetFileNameWithoutExtension(file).Split('_');
+            return parts.Length >= 2 ? parts[0] + "_" + parts[1] : Path.GetFileNameWithoutExtension(file);
+        }
+
         private void Print(string num)
         {
             var printingDir = txtPrint.Text;
             var lFiles = Directory.GetFiles(printingDir, "*.pdf", SearchOption.TopDirectoryOnly);
+            if (lFiles.Length == 0)
+                ReportEmptyBatch();
 
             foreach (var file in lFiles)
             {
@@ -1009,9 +1084,9 @@ namespace MergeAndPrint
                     Application.DoEvents();
                     using (var pdf = PdfDocument.FromFile(file))
                     {
-                        pdf.Print(pprint);
+                        PrintPdf(pdf, pprint, file);
                     }
-                        
+
                     Thread.Sleep(1000);
                     //var doc = pdf.GetPrintDocument();
                     //doc.EndPrint += Doc_EndPrint;
@@ -1020,13 +1095,25 @@ namespace MergeAndPrint
                 }
                 catch (Exception ex)
                 {
-                    SimpleLogger.SimpleLog.Log(ex);
-                    logToScreen("הדפסת קבצים נכשלה לקובץ - " + file);
-                    MessageBox.Show("הדפסת קבצים נכשלה לקובץ - " + file);
+                    ReportPrintFailure(file, ex);
                 }
             }
+        }
 
-
+        /// <summary>
+        /// IronPdf's Print returns Task&lt;int&gt;. Wait for it to finish so the document isn't disposed
+        /// mid-print and failures surface as exceptions. Started via Task.Run so it doesn't capture the
+        /// WinForms synchronization context (blocking on it directly from the UI thread could deadlock).
+        /// The UI still blocks until printing finishes. The page count means pages were sent to the driver,
+        /// not that paper came out.
+        /// </summary>
+        private static void PrintPdf(PdfDocument pdf, string printerName, string file)
+        {
+            var printed = Task.Run(() => pdf.Print(printerName)).GetAwaiter().GetResult();
+            var target = string.IsNullOrEmpty(printerName) ? "(default printer)" : printerName;
+            if (printed <= 0)
+                throw new InvalidOperationException($"No pages were printed to '{target}': {file}");
+            SimpleLog.Info($"Printed {printed} page(s) to '{target}': {file}");
         }
 
         //private void Doc_EndPrint(object sender, PrintEventArgs e)
@@ -1036,51 +1123,54 @@ namespace MergeAndPrint
         private void PrintImage(string fileName)
         {
             using (printImg = System.Drawing.Image.FromFile(fileName))
+            using (var printDoc = new PrintDocument())
             {
-                var h = printImg.Height;
-                var w = printImg.Width;
                 pages = 0;
-                using (PrintDocument printDoc = new PrintDocument())
-                {
-                    PrintImageObj = true;
-                    if (!printDoc.PrinterSettings.IsValid)
-                    {
-                        MessageBox.Show(@"Printer settings are invalid");
-                        return;
-                    }
+                // Choose the target printer BEFORE validating; validating first checked the default printer
+                // instead, and an invalid default left the old busy-flag loop waiting forever.
+                if (!string.IsNullOrEmpty(Printer9))
                     printDoc.PrinterSettings.PrinterName = Printer9;
-                    printDoc.PrintPage += TiffPrintPage;
-                    printDoc.DefaultPageSettings.Landscape = w > h;
-                    printDoc.EndPrint += PrintTiffFileEndded;
-                    printDoc.PrintController = new StandardPrintController();
-                    printDoc.Print();
-                }
+                if (!printDoc.PrinterSettings.IsValid)
+                    throw new InvalidOperationException("Printer is not installed or not valid: " + Printer9);
+
+                printDoc.PrintPage += TiffPrintPage;
+                printDoc.DefaultPageSettings.Landscape = printImg.Width > printImg.Height;
+                printDoc.PrintController = new StandardPrintController();
+                printDoc.Print(); // synchronous: returns after the last page is spooled
             }
-                
         }
+
         private void PrintFile(string fileName)
         {
-            using (Process shellProcess = new Process())
+            // .NET 8 defaults UseShellExecute to false, which skips the shell "PrintTo" verb
+            // and would start the file as a program instead. It must be true here.
+            var hasPrinter = !string.IsNullOrEmpty(Printer9);
+            var psi = new ProcessStartInfo(fileName)
             {
-                shellProcess.StartInfo.FileName = fileName;
-                shellProcess.StartInfo.CreateNoWindow = true;
-                shellProcess.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                shellProcess.StartInfo.Arguments = "\"" + Printer9 + "\"";
-                shellProcess.StartInfo.Verb = "PrintTo";
-                shellProcess.Start();
-                if (shellProcess.HasExited == false)
+                UseShellExecute = true,
+                Verb = hasPrinter ? "PrintTo" : "Print",
+                Arguments = hasPrinter ? "\"" + Printer9 + "\"" : "",
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+            using (var shellProcess = Process.Start(psi))
+            {
+                // Null when the shell handed the job to an already-running application: nothing to check.
+                if (shellProcess == null)
+                    return;
+
+                if (!shellProcess.WaitForExit(10000))
                 {
-                    shellProcess.WaitForExit(10000);
+                    // Many print handlers (Word, Acrobat...) stay open after printing, so a timeout is
+                    // logged as unconfirmed rather than counted as a failure.
+                    SimpleLog.Warning("Print handler still running after 10s, print not confirmed: " + fileName);
+                    logToScreen("לא התקבל אישור הדפסה לקובץ - " + Path.GetFileName(fileName));
+                    return;
                 }
-
-                shellProcess.EnableRaisingEvents = true;
-
-                shellProcess.Close();
+                if (shellProcess.ExitCode != 0)
+                    throw new InvalidOperationException(
+                        $"Print handler exited with code {shellProcess.ExitCode}: {fileName}");
             }
-        }
-        private void PrintTiffFileEndded(object sender, PrintEventArgs e)
-        {
-            PrintImageObj = false;
         }
         private void TiffPrintPage(object sender, PrintPageEventArgs e)
         {
@@ -1142,12 +1232,11 @@ namespace MergeAndPrint
             var dirs = Directory.GetDirectories(diSource.FullName);
             foreach (var dir in dirs)
             {
-                foreach (var sdir in sdirs)
+                // Exact name match: Contains() made "Acme" also delete "Acme2".
+                var name = Path.GetFileName(dir);
+                if (sdirs.Any(sdir => string.Equals(sdir, name, StringComparison.OrdinalIgnoreCase)))
                 {
-                    if (dir.Contains(sdir))
-                    {
-                        Directory.Delete(dir, true);
-                    }
+                    Directory.Delete(dir, true);
                 }
             }
         }
@@ -1324,6 +1413,16 @@ namespace MergeAndPrint
                 MessageBox.Show("פרטים חסרים בלשונית קונפיגורציה");
                 return false;
             }
+            if (!int.TryParse(txtTimer.Text, out var seconds) || seconds <= 0)
+            {
+                MessageBox.Show("זמן הספירה לאחור חייב להיות מספר שלם חיובי");
+                return false;
+            }
+            if (!TryParseSrcMinutes(txtSrcMinutes.Text, out _))
+            {
+                MessageBox.Show(SrcMinutesError);
+                return false;
+            }
             timeVal = txtTimer.Text;
             srcMinVal = txtSrcMinutes.Text;
             return true;
@@ -1350,6 +1449,13 @@ namespace MergeAndPrint
             else
             {
                 MessageBox.Show("יש לבחור תקיות");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(num))
+            {
+                MessageBox.Show("יש לבחור תקיה");
+                return;
             }
 
             for (int i = 0; i < col.Count; i++)
@@ -1357,7 +1463,8 @@ namespace MergeAndPrint
                 sdirs.Add(col[i].ToString());
             }
 
-            Start(num, sdirs);
+            // Shlomo's folder is printed as-is, never merged (same as btn9).
+            Start(num, sdirs, num != ShlomoName);
 
         }
 

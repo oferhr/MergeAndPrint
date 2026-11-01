@@ -17,6 +17,8 @@ namespace MergeAndPrint
             Application.EnableVisualStyles();
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.SetCompatibleTextRenderingDefault(false);
+            // Log next to the exe, not to whatever the shortcut's "Start in" folder happens to be.
+            SimpleLogger.SimpleLog.SetLogDir(AppContext.BaseDirectory);
             try
             {
                 _ = AppConfig.Current;

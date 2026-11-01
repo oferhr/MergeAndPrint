@@ -1,0 +1,7 @@
+.vs/
+bin/
+obj/
+*.user
+*.csproj.Backup*.tmp
+config.json
+*.log
