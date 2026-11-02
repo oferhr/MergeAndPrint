@@ -5,3 +5,4 @@ obj/
 *.csproj.Backup*.tmp
 config.json
 *.log
+licenses.json

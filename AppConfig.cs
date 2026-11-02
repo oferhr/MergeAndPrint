@@ -27,6 +27,12 @@ namespace MergeAndPrint
         public string Printer33 { get; set; } = "";
         public string Printer9 { get; set; } = "";
 
+        /// <summary>
+        /// מנוע הדפסת PDF: "Spire" (ברירת מחדל - שולח טקסט ווקטורים, עבודת הדפסה קטנה ומהירה)
+        /// או "IronPdf" (ממיר כל עמוד לתמונה, עבודת הדפסה גדולה ואיטית).
+        /// </summary>
+        public string PrintEngine { get; set; } = PrintEngines.Spire;
+
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -135,5 +141,15 @@ namespace MergeAndPrint
                 throw;
             }
         }
+    }
+
+    /// <summary>Values for <see cref="AppConfig.PrintEngine"/>. Anything other than IronPdf means Spire.</summary>
+    public static class PrintEngines
+    {
+        public const string Spire = "Spire";
+        public const string IronPdf = "IronPdf";
+
+        public static bool IsIronPdf(string engine) =>
+            string.Equals(engine?.Trim(), IronPdf, StringComparison.OrdinalIgnoreCase);
     }
 }
