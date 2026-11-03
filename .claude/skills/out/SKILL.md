@@ -1,6 +1,6 @@
 ---
 name: out
-description: Build MergeAndPrint in Release (win-x64) and zip it into out/MergeAndPrint-<version>.zip, ready to send to the client. Use when asked to "build a release", "make the zip", "package for the client" or run /out.
+description: Build MergeAndPrint in Release (win-x64) and zip it into out/MergeAndPrint_Version_<version>.zip, ready to send to the client. Use when asked to "build a release", "make the zip", "package for the client" or run /out.
 ---
 
 # /out — build and zip a MergeAndPrint release
@@ -19,7 +19,7 @@ Run from the repo root (`C:\Projects\Ofer\MergeAndPrint`).
      If it is missing, stop and tell the user.
    - Note the current branch and whether the tree is clean (`git status --short`), and mention it
      in the report: a zip built from uncommitted changes doesn't match any commit.
-   - If `out/MergeAndPrint-<version>.zip` already exists, say so; it will be replaced.
+   - If `out/MergeAndPrint_Version_<version>.zip` already exists, say so; it will be replaced.
 
 2. **Publish** to a fresh folder in the session scratchpad (never inside the repo):
 
@@ -34,7 +34,7 @@ Run from the repo root (`C:\Projects\Ofer\MergeAndPrint`).
 3. **Zip** with PowerShell into `out/` (create `out` if missing):
 
    ```powershell
-   Compress-Archive -Path "<scratchpad>\publish\*" -DestinationPath "C:\Projects\Ofer\MergeAndPrint\out\MergeAndPrint-<version>.zip" -CompressionLevel Optimal
+   Compress-Archive -Path "<scratchpad>\publish\*" -DestinationPath "C:\Projects\Ofer\MergeAndPrint\out\MergeAndPrint_Version_<version>.zip" -CompressionLevel Optimal
    ```
 
 4. **Verify** by opening the zip (`System.IO.Compression.ZipFile.OpenRead`):
