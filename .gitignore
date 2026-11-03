@@ -6,3 +6,4 @@ obj/
 config.json
 *.log
 licenses.json
+/out/
