@@ -17,6 +17,9 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.13" />
+    <!-- Do not upgrade: our Spire license key covers versions up to 7.7.10 only.
+         7.8.8 and later print an "Evaluation Warning" line on every page. -->
+    <PackageReference Include="Spire.PDF" Version="7.7.10" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Properties\Settings.Designer.cs">
@@ -26,6 +29,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <!-- License keys, not in git (see .gitignore and Licenses.cs). Copied next to the exe when present. -->
+    <None Update="licenses.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

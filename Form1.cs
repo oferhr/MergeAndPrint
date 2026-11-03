@@ -110,7 +110,7 @@ namespace MergeAndPrint
             SimpleLog.Info($"Config: source='{txtSource.Text}', main='{txtMain.Text}', working='{txtWorkFol.Text}', " +
                 $"print='{txtPrint.Text}', archive='{txtArchive.Text}', timer={timeVal}s, srcMinutes={srcMinVal}, shlomo='{ShlomoName}'");
             SimpleLog.Info($"Printers: 1='{Printer1}', 2='{Printer2}', 3='{Printer3}', 1_999='{Printer11}', " +
-                $"2_999='{Printer22}', 3_999='{Printer33}', 9='{Printer9}'");
+                $"2_999='{Printer22}', 3_999='{Printer33}', 9='{Printer9}', engine='{AppConfig.Current.PrintEngine}'");
         }
 
         /// <summary>
@@ -709,10 +709,7 @@ namespace MergeAndPrint
                 {
                     if (ext == "pdf")
                     {
-                        using (var pdf = PdfDocument.FromFile(file))
-                        {
-                            PrintPdf(pdf, Printer9, file);
-                        }
+                        PrintPdf(file, Printer9);
                     }
                     else if (ext == "jpeg" || ext == "jpg" || ext == "tif" || ext == "tiff")
                     {
@@ -1110,10 +1107,7 @@ namespace MergeAndPrint
                     var pprint = PrinterFor(num);
                     logToScreen("מדפיס קובץ  - " + Path.GetFileName(file));
                     Application.DoEvents();
-                    using (var pdf = PdfDocument.FromFile(file))
-                    {
-                        PrintPdf(pdf, pprint, file);
-                    }
+                    PrintPdf(file, pprint);
 
                     Thread.Sleep(1000);
                     //var doc = pdf.GetPrintDocument();
@@ -1129,19 +1123,60 @@ namespace MergeAndPrint
         }
 
         /// <summary>
-        /// IronPdf's Print returns Task&lt;int&gt;. Wait for it to finish so the document isn't disposed
-        /// mid-print and failures surface as exceptions. Started via Task.Run so it doesn't capture the
-        /// WinForms synchronization context (blocking on it directly from the UI thread could deadlock).
-        /// The UI still blocks until printing finishes. The page count means pages were sent to the driver,
-        /// not that paper came out.
+        /// Print a PDF with the engine chosen by <see cref="AppConfig.PrintEngine"/> (Spire by default).
+        /// The page count means pages were sent to the driver, not that paper came out.
         /// </summary>
-        private static void PrintPdf(PdfDocument pdf, string printerName, string file)
+        private static void PrintPdf(string file, string printerName)
         {
-            var printed = Task.Run(() => pdf.Print(printerName)).GetAwaiter().GetResult();
             var target = string.IsNullOrEmpty(printerName) ? "(default printer)" : printerName;
+            var useIronPdf = PrintEngines.IsIronPdf(AppConfig.Current.PrintEngine);
+            var engine = useIronPdf ? PrintEngines.IronPdf : PrintEngines.Spire;
+            var watch = Stopwatch.StartNew();
+
+            var printed = useIronPdf ? PrintPdfWithIronPdf(file, printerName) : PrintPdfWithSpire(file, printerName);
+
             if (printed <= 0)
                 throw new InvalidOperationException($"No pages were printed to '{target}': {file}");
-            SimpleLog.Info($"Printed {printed} page(s) to '{target}': {file}");
+            SimpleLog.Info($"Printed {printed} page(s) to '{target}' with {engine} in {watch.ElapsedMilliseconds} ms " +
+                $"({new FileInfo(file).Length / 1024} KB file): {file}");
+        }
+
+        /// <summary>
+        /// Spire draws each page into the printer as text and vector shapes, so the spool job stays
+        /// close to the PDF's size. Print() is synchronous: it returns after the last page is spooled.
+        /// StandardPrintController hides the "Printing..." progress window.
+        /// </summary>
+        private static int PrintPdfWithSpire(string file, string printerName)
+        {
+            using (var doc = new Spire.Pdf.PdfDocument())
+            {
+                doc.LoadFromFile(file);
+                if (!string.IsNullOrEmpty(printerName))
+                {
+                    doc.PrintSettings.PrinterName = printerName;
+                    // An unknown printer name must fail, not fall back to another printer.
+                    var check = new PrinterSettings { PrinterName = printerName };
+                    if (!check.IsValid)
+                        throw new InvalidOperationException("Printer is not installed or not valid: " + printerName);
+                }
+                doc.PrintSettings.PrintController = new StandardPrintController();
+                doc.Print();
+                return doc.Pages.Count;
+            }
+        }
+
+        /// <summary>
+        /// IronPdf renders every page to a 300 DPI bitmap, which makes the spool job very large
+        /// (a 130 KB PDF can become ~100 MB). Kept as a fallback via PrintEngine = "IronPdf".
+        /// Print returns Task&lt;int&gt;; started via Task.Run so it doesn't capture the WinForms
+        /// synchronization context (blocking on it from the UI thread could deadlock).
+        /// </summary>
+        private static int PrintPdfWithIronPdf(string file, string printerName)
+        {
+            using (var pdf = PdfDocument.FromFile(file))
+            {
+                return Task.Run(() => pdf.Print(printerName)).GetAwaiter().GetResult();
+            }
         }
 
         //private void Doc_EndPrint(object sender, PrintEventArgs e)
