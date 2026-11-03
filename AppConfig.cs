@@ -33,6 +33,12 @@ namespace MergeAndPrint
         /// </summary>
         public string PrintEngine { get; set; } = PrintEngines.Spire;
 
+        /// <summary>
+        /// בדיקה בעליית התוכנה אילו מדפסות רשת יודעות לקרוא PDF ישירות. התוצאה נכתבת ללוג בלבד, לא מודפס דבר.
+        /// אפשר לכבות (false) אם מדפסת כלשהי מגיבה לבדיקה בהדפסת דף.
+        /// </summary>
+        public bool CheckPrintersOnStartup { get; set; } = true;
+
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
