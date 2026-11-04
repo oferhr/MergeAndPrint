@@ -62,6 +62,8 @@ namespace MergeAndPrint
 
             LoadConfigToScreen();
             LogConfiguration();
+            PrinterCheck.StartInBackground(printers,
+                new[] { Printer1, Printer2, Printer3, Printer11, Printer22, Printer33, Printer9 });
 
             updateScreen();
             updateDirectories();
@@ -618,15 +620,21 @@ namespace MergeAndPrint
 
             try
             {
+                // The first run after start-up waits here until Spire/IronPdf have finished loading.
+                Warmup.WaitIfRunning(logToScreen);
+
                 if (Directory.Exists(txtPrint.Text))
                     Directory.Delete(txtPrint.Text, true);
                 Directory.CreateDirectory(txtPrint.Text);
 
+                var stage = Stopwatch.StartNew();
                 logToScreen("מתחיל בתהליך");
                 logToScreen("מעתיק קבצים לארכיון...");
                 archive(num, sdirs);
+                LogStage("archive copy", stage);
                 logToScreen("מעתיק קבצים לתקיה זמנית...");
                 SendToWorkingFolder(num, sdirs);
+                LogStage("copy to working folder", stage);
                 if (IsMerge)
                 {
                     logToScreen("מתחיל בהמרת הקבצים...");
@@ -635,19 +643,23 @@ namespace MergeAndPrint
                         FailRun();
                         return;
                     }
+                    LogStage("convert", stage);
                     logToScreen("מתחיל באיחוד הקבצים");
                     if (!Merge(num, sdirs))
                     {
                         FailRun();
                         return;
                     }
+                    LogStage("merge", stage);
                     logToScreen("מתחיל הדפסת הקבצים");
                     Print(num);
+                    LogStage("print (incl. 1 s pause per file)", stage);
                 }
                 else
                 {
                     logToScreen("מתחיל הדפסת הקבצים");
                     printNoMerge(num, sdirs);
+                    LogStage("print (incl. 1 s pause per file)", stage);
                 }
             }
             catch (Exception ex)
@@ -661,6 +673,13 @@ namespace MergeAndPrint
             logToScreen("ממתין לספירה לאחור להסתיים");
             CountDown();
             updateDirectories();
+        }
+
+        /// <summary>Log how long a stage of the run took, then restart the stopwatch for the next stage.</summary>
+        private static void LogStage(string name, Stopwatch stage)
+        {
+            SimpleLog.Info($"Stage '{name}' took {stage.ElapsedMilliseconds} ms");
+            stage.Restart();
         }
 
         /// <summary>
@@ -914,6 +933,8 @@ namespace MergeAndPrint
 
                             //lblCount.Text = $"Converting file {counter} of {files.Count}";
                             Application.DoEvents();
+                            var convertWatch = Stopwatch.StartNew();
+                            var converts = IsConvertedType(ext);
                             if (ext.ToLower() == ".jpg" || ext.ToLower() == ".jpeg")
                             {
                                 using (var converted = ImageToPdfConverter.ImageToPdf(file, IronPdf.Imaging.ImageBehavior.FitToPage))
@@ -967,6 +988,11 @@ namespace MergeAndPrint
                                     PDF.SaveAs(OutputPath);
                                 }
                             }
+                            if (converts)
+                            {
+                                SimpleLog.Info($"Converted {ext.ToLower()} to PDF in {convertWatch.ElapsedMilliseconds} ms " +
+                                    $"({new FileInfo(file).Length / 1024} KB file): {file}");
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -989,6 +1015,18 @@ namespace MergeAndPrint
             }
 
         }
+        /// <summary>File types that <see cref="Convert"/> turns into a PDF with IronPdf.</summary>
+        private static bool IsConvertedType(string ext)
+        {
+            switch (ext.ToLowerInvariant())
+            {
+                case ".jpg": case ".jpeg": case ".tif": case ".tiff": case ".htm": case ".html":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         private bool Merge(string num, List<string> sdirs)
         {
             try
@@ -1038,16 +1076,20 @@ namespace MergeAndPrint
                         var mergeName = supplier + "-" + group.Key;
                         logToScreen("מאחד קובץ - " + mergeName + ".pdf");
                         var pdfDocuments = new List<PdfDocument>();
+                        var mergeWatch = Stopwatch.StartNew();
                         try
                         {
                             foreach (var path in group.OrderBy(o => o, StringComparer.OrdinalIgnoreCase))
                             {
                                 pdfDocuments.Add(PdfDocument.FromFile(path));
                             }
+                            var mergedPath = Path.Combine(txtPrint.Text, mergeName + ".pdf");
                             using (var mergedPdfDocument = PdfDocument.Merge(pdfDocuments))
                             {
-                                mergedPdfDocument.SaveAs(Path.Combine(txtPrint.Text, mergeName + ".pdf"));
+                                mergedPdfDocument.SaveAs(mergedPath);
                             }
+                            SimpleLog.Info($"Merged {pdfDocuments.Count} file(s) in {mergeWatch.ElapsedMilliseconds} ms " +
+                                $"({new FileInfo(mergedPath).Length / 1024} KB result): {mergedPath}");
                         }
                         finally
                         {

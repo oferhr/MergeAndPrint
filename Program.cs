@@ -42,6 +42,8 @@ namespace MergeAndPrint
             }
 
             Licenses.Apply();
+            // Load Spire/IronPdf in the background now, so the first file does not wait ~10 s for them.
+            Warmup.Start();
             Application.Run(new Form1());
             SimpleLogger.SimpleLog.Info("Shutdown");
         }
