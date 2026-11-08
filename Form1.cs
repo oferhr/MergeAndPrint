@@ -1182,7 +1182,7 @@ namespace MergeAndPrint
             var watch = Stopwatch.StartNew();
 
             int printed;
-            if (engine == PrintEngines.Ghostscript && !string.IsNullOrEmpty(printerName))
+            if (engine == PrintEngines.Custom && !string.IsNullOrEmpty(printerName))
             {
                 printed = PrintPdfWithGhostscript(file, printerName, out var fallbackReason);
                 if (fallbackReason != null)
@@ -1195,7 +1195,7 @@ namespace MergeAndPrint
             }
             else
             {
-                if (engine == PrintEngines.Ghostscript)
+                if (engine == PrintEngines.Custom)
                     engine = PrintEngines.Spire;   // RAW jobs need a named queue; no printer configured means default printer
                 printed = engine == PrintEngines.IronPdf ? PrintPdfWithIronPdf(file, printerName) : PrintPdfWithSpire(file, printerName);
             }

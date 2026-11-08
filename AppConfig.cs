@@ -29,7 +29,8 @@ namespace MergeAndPrint
 
         /// <summary>
         /// מנוע הדפסת PDF: "Spire" (ברירת מחדל - שולח טקסט ווקטורים, עבודת הדפסה קטנה ומהירה)
-        /// או "IronPdf" (ממיר כל עמוד לתמונה, עבודת הדפסה גדולה ואיטית).
+        /// או "IronPdf" (ממיר כל עמוד לתמונה, עבודת הדפסה גדולה ואיטית)
+        /// או "custom" (ממיר את ה-PDF לשפת המדפסת PCL 6 ב-Ghostscript ושולח לתור כמו שהוא - המהיר ביותר).
         /// </summary>
         public string PrintEngine { get; set; } = PrintEngines.Spire;
 
@@ -169,7 +170,8 @@ namespace MergeAndPrint
     {
         public const string Spire = "Spire";
         public const string IronPdf = "IronPdf";
-        public const string Ghostscript = "Ghostscript";
+        /// <summary>Ghostscript converts the PDF to PCL 6 and it goes to the queue as a RAW job (GhostscriptPrinter).</summary>
+        public const string Custom = "custom";
 
         /// <summary>The engine name as configured, normalised to one of the constants.</summary>
         public static string Normalize(string engine)
@@ -177,8 +179,8 @@ namespace MergeAndPrint
             var value = engine?.Trim();
             if (string.Equals(value, IronPdf, StringComparison.OrdinalIgnoreCase))
                 return IronPdf;
-            if (string.Equals(value, Ghostscript, StringComparison.OrdinalIgnoreCase))
-                return Ghostscript;
+            if (string.Equals(value, Custom, StringComparison.OrdinalIgnoreCase))
+                return Custom;
             return Spire;
         }
     }
