@@ -27,6 +27,8 @@ namespace MergeAndPrint
         private string Printer9;
         private System.Windows.Forms.Timer timer1;
         private int printFailures;
+        // The run found no files to print (e.g. an empty supplier folder). Not an error, the user is just told.
+        private bool nothingToPrint;
         // True from the start of a run until its countdown ends or it fails. DoEvents lets clicks through
         // mid-run, so every entry point checks this before touching any folder.
         private bool _running;
@@ -604,6 +606,7 @@ namespace MergeAndPrint
             }
             _running = true;
             printFailures = 0;
+            nothingToPrint = false;
             runStopwatch = Stopwatch.StartNew();
             SimpleLog.Info($"Run started: folder='{num}', merge={IsMerge}, printer='{PrinterFor(num)}', " +
                 (sdirs == null ? "all suppliers" : "selected=[" + string.Join(", ", sdirs) + "]"));
@@ -776,8 +779,8 @@ namespace MergeAndPrint
 
         private void ReportEmptyBatch()
         {
-            printFailures++;
-            SimpleLog.Warning("No files found to print in " + txtPrint.Text);
+            nothingToPrint = true;
+            SimpleLog.Info("No files found to print in " + txtPrint.Text);
             logToScreen("לא נמצאו קבצים להדפסה");
         }
 
@@ -831,10 +834,13 @@ namespace MergeAndPrint
                 chbox1.Enabled = true;
                 _running = false;
                 SimpleLog.Info($"Run finished after {runStopwatch.Elapsed.TotalSeconds:0}s: " +
-                    (printFailures > 0 ? $"{printFailures} print error(s)" : "success"));
+                    (printFailures > 0 ? $"{printFailures} print error(s)" : nothingToPrint ? "nothing to print" : "success"));
                 updateScreen();
                 if (printFailures > 0)
                     MessageBox.Show("הפעולה הסתיימה עם " + printFailures + " שגיאות הדפסה, יש לבחון קובץ לוג");
+                else if (nothingToPrint)
+                    MessageBox.Show("לא נמצאו קבצים להדפסה בתיקייה שנבחרה.", "אין מה להדפיס",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                 else
                     MessageBox.Show("הפעולה הסתיימה בהצלחה");
             };
