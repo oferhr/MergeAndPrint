@@ -99,6 +99,7 @@ namespace MergeAndPrint
                 Printer22 = SelectPrinter(cboPrinter22, cfg.Printer22);
                 Printer33 = SelectPrinter(cboPrinter33, cfg.Printer33);
                 Printer9 = SelectPrinter(cboPrinter9, cfg.Printer9);
+                SelectPrintEngine(cfg.PrintEngine);
             }
             finally
             {
@@ -164,8 +165,11 @@ namespace MergeAndPrint
                 cfg.Printer22 = Printer22 ?? "";
                 cfg.Printer33 = Printer33 ?? "";
                 cfg.Printer9 = Printer9 ?? "";
+                if (cboPrintEngine.SelectedItem is PrintEngineOption engine)
+                    cfg.PrintEngine = engine.Value;
 
                 cfg.Save();
+                SimpleLog.Info($"Config saved: engine='{cfg.PrintEngine}'");
             }
             catch (Exception ex)
             {
@@ -176,6 +180,36 @@ namespace MergeAndPrint
             }
 
             MessageBox.Show("ההגדרות נשמרו לקובץ:" + Environment.NewLine + AppConfig.FilePath);
+            if (PrintEngines.Normalize(AppConfig.Current.PrintEngine) == PrintEngines.Custom && GhostscriptPrinter.ExecutablePath == null)
+            {
+                MessageBox.Show("מנוע ההדפסה המהיר (custom) דורש את Ghostscript, והוא לא נמצא בתיקיית התוכנה (gs\\bin)." + Environment.NewLine +
+                    "עד שיותקן, קובצי PDF יודפסו עם Spire.", "Ghostscript לא נמצא", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        /// <summary>An entry in the print-engine dropdown: the value saved to config.json and the text shown.</summary>
+        private sealed class PrintEngineOption
+        {
+            public PrintEngineOption(string value, string text) { Value = value; Text = text; }
+            public string Value { get; }
+            public string Text { get; }
+            public override string ToString() => Text;
+        }
+
+        private static readonly PrintEngineOption[] PrintEngineOptions =
+        {
+            new PrintEngineOption(PrintEngines.Spire, "רגיל (Spire)"),
+            new PrintEngineOption(PrintEngines.Custom, "מהיר (custom)"),
+            new PrintEngineOption(PrintEngines.IronPdf, "ישן ואיטי (IronPdf)"),
+        };
+
+        /// <summary>Fill the print-engine dropdown (once) and select the configured engine; unknown values show as Spire.</summary>
+        private void SelectPrintEngine(string configured)
+        {
+            if (cboPrintEngine.Items.Count == 0)
+                cboPrintEngine.Items.AddRange(PrintEngineOptions);
+            var normalized = PrintEngines.Normalize(configured);
+            cboPrintEngine.SelectedItem = PrintEngineOptions.First(o => o.Value == normalized);
         }
 
         private void updateScreen()
