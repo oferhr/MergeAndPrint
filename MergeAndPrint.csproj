@@ -28,6 +28,20 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
   </ItemGroup>
+  <!-- Ghostscript for the "Ghostscript" print engine (GhostscriptPrinter.cs): the two files it needs are shipped in
+       gs\bin next to the exe, so the client PC needs no separate install. Taken from the Ghostscript installed on the
+       build machine; if it is missing the app still builds and falls back to Spire (or a GhostscriptPath in config). -->
+  <PropertyGroup>
+    <GhostscriptDir Condition="'$(GhostscriptDir)' == ''">C:\Program Files\gs\gs10.06.0</GhostscriptDir>
+  </PropertyGroup>
+  <ItemGroup Condition="Exists('$(GhostscriptDir)\bin\gswin64c.exe')">
+    <None Include="$(GhostscriptDir)\bin\gswin64c.exe" Link="gs\bin\gswin64c.exe" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(GhostscriptDir)\bin\gsdll64.dll" Link="gs\bin\gsdll64.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(GhostscriptDir)\doc\COPYING" Link="gs\COPYING.txt" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(GhostscriptDir)\doc\COPYING')" />
+  </ItemGroup>
+  <Target Name="WarnNoGhostscript" BeforeTargets="Build" Condition="!Exists('$(GhostscriptDir)\bin\gswin64c.exe')">
+    <Warning Text="Ghostscript not found at $(GhostscriptDir): the build will not include gs\bin, so the Ghostscript print engine needs Ghostscript installed on the client PC." />
+  </Target>
   <ItemGroup>
     <!-- License keys, not in git (see .gitignore and Licenses.cs). Copied next to the exe when present. -->
     <None Update="licenses.json">
