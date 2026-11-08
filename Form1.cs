@@ -27,6 +27,8 @@ namespace MergeAndPrint
         private string Printer9;
         private System.Windows.Forms.Timer timer1;
         private int printFailures;
+        // The run found no files to print (e.g. an empty supplier folder). Not an error, the user is just told.
+        private bool nothingToPrint;
         // True from the start of a run until its countdown ends or it fails. DoEvents lets clicks through
         // mid-run, so every entry point checks this before touching any folder.
         private bool _running;
@@ -113,6 +115,7 @@ namespace MergeAndPrint
                 $"print='{txtPrint.Text}', archive='{txtArchive.Text}', timer={timeVal}s, srcMinutes={srcMinVal}, shlomo='{ShlomoName}'");
             SimpleLog.Info($"Printers: 1='{Printer1}', 2='{Printer2}', 3='{Printer3}', 1_999='{Printer11}', " +
                 $"2_999='{Printer22}', 3_999='{Printer33}', 9='{Printer9}', engine='{AppConfig.Current.PrintEngine}'");
+            SimpleLog.Info(GhostscriptPrinter.DescribeSetup());
         }
 
         /// <summary>
@@ -604,6 +607,7 @@ namespace MergeAndPrint
             }
             _running = true;
             printFailures = 0;
+            nothingToPrint = false;
             runStopwatch = Stopwatch.StartNew();
             SimpleLog.Info($"Run started: folder='{num}', merge={IsMerge}, printer='{PrinterFor(num)}', " +
                 (sdirs == null ? "all suppliers" : "selected=[" + string.Join(", ", sdirs) + "]"));
@@ -776,8 +780,8 @@ namespace MergeAndPrint
 
         private void ReportEmptyBatch()
         {
-            printFailures++;
-            SimpleLog.Warning("No files found to print in " + txtPrint.Text);
+            nothingToPrint = true;
+            SimpleLog.Info("No files found to print in " + txtPrint.Text);
             logToScreen("לא נמצאו קבצים להדפסה");
         }
 
@@ -831,10 +835,13 @@ namespace MergeAndPrint
                 chbox1.Enabled = true;
                 _running = false;
                 SimpleLog.Info($"Run finished after {runStopwatch.Elapsed.TotalSeconds:0}s: " +
-                    (printFailures > 0 ? $"{printFailures} print error(s)" : "success"));
+                    (printFailures > 0 ? $"{printFailures} print error(s)" : nothingToPrint ? "nothing to print" : "success"));
                 updateScreen();
                 if (printFailures > 0)
                     MessageBox.Show("הפעולה הסתיימה עם " + printFailures + " שגיאות הדפסה, יש לבחון קובץ לוג");
+                else if (nothingToPrint)
+                    MessageBox.Show("לא נמצאו קבצים להדפסה בתיקייה שנבחרה.", "אין מה להדפיס",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                 else
                     MessageBox.Show("הפעולה הסתיימה בהצלחה");
             };
@@ -1171,16 +1178,61 @@ namespace MergeAndPrint
         private static void PrintPdf(string file, string printerName)
         {
             var target = string.IsNullOrEmpty(printerName) ? "(default printer)" : printerName;
-            var useIronPdf = PrintEngines.IsIronPdf(AppConfig.Current.PrintEngine);
-            var engine = useIronPdf ? PrintEngines.IronPdf : PrintEngines.Spire;
+            var engine = PrintEngines.Normalize(AppConfig.Current.PrintEngine);
             var watch = Stopwatch.StartNew();
 
-            var printed = useIronPdf ? PrintPdfWithIronPdf(file, printerName) : PrintPdfWithSpire(file, printerName);
+            int printed;
+            if (engine == PrintEngines.Custom && !string.IsNullOrEmpty(printerName))
+            {
+                printed = PrintPdfWithGhostscript(file, printerName, out var fallbackReason);
+                if (fallbackReason != null)
+                {
+                    // Nothing was sent: the conversion failed before the queue was touched, so Spire can print it.
+                    SimpleLog.Warning($"Ghostscript could not convert {file}, printing it with Spire instead: {fallbackReason}");
+                    engine = PrintEngines.Spire;
+                    printed = PrintPdfWithSpire(file, printerName);
+                }
+            }
+            else
+            {
+                if (engine == PrintEngines.Custom)
+                    engine = PrintEngines.Spire;   // RAW jobs need a named queue; no printer configured means default printer
+                printed = engine == PrintEngines.IronPdf ? PrintPdfWithIronPdf(file, printerName) : PrintPdfWithSpire(file, printerName);
+            }
 
             if (printed <= 0)
                 throw new InvalidOperationException($"No pages were printed to '{target}': {file}");
             SimpleLog.Info($"Printed {printed} page(s) to '{target}' with {engine} in {watch.ElapsedMilliseconds} ms " +
                 $"({new FileInfo(file).Length / 1024} KB file): {file}");
+        }
+
+        /// <summary>
+        /// Ghostscript converts the PDF to PCL 6 and the job goes to the queue as RAW data (see GhostscriptPrinter).
+        /// Returns the page count; when the conversion fails, returns 0 with a reason and nothing has been sent.
+        /// </summary>
+        private static int PrintPdfWithGhostscript(string file, string printerName, out string fallbackReason)
+        {
+            var check = new PrinterSettings { PrinterName = printerName };
+            if (!check.IsValid)
+                throw new InvalidOperationException("Printer is not installed or not valid: " + printerName);
+
+            int pages;
+            using (var doc = new Spire.Pdf.PdfDocument())
+            {
+                doc.LoadFromFile(file);
+                pages = doc.Pages.Count;
+            }
+
+            var convertWatch = Stopwatch.StartNew();
+            var job = GhostscriptPrinter.TryConvert(file, printerName, out fallbackReason);
+            if (job == null)
+                return 0;
+            var convertMs = convertWatch.ElapsedMilliseconds;
+
+            var sendWatch = Stopwatch.StartNew();
+            GhostscriptPrinter.SendRaw(printerName, Path.GetFileName(file), job);
+            SimpleLog.Info($"Ghostscript: converted in {convertMs} ms, {job.Length / 1024} KB job queued in {sendWatch.ElapsedMilliseconds} ms");
+            return pages;
         }
 
         /// <summary>

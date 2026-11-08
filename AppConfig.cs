@@ -29,7 +29,8 @@ namespace MergeAndPrint
 
         /// <summary>
         /// מנוע הדפסת PDF: "Spire" (ברירת מחדל - שולח טקסט ווקטורים, עבודת הדפסה קטנה ומהירה)
-        /// או "IronPdf" (ממיר כל עמוד לתמונה, עבודת הדפסה גדולה ואיטית).
+        /// או "IronPdf" (ממיר כל עמוד לתמונה, עבודת הדפסה גדולה ואיטית)
+        /// או "custom" (ממיר את ה-PDF לשפת המדפסת PCL 6 ב-Ghostscript ושולח לתור כמו שהוא - המהיר ביותר).
         /// </summary>
         public string PrintEngine { get; set; } = PrintEngines.Spire;
 
@@ -38,6 +39,21 @@ namespace MergeAndPrint
         /// אפשר לכבות (false) אם מדפסת כלשהי מגיבה לבדיקה בהדפסת דף.
         /// </summary>
         public bool CheckPrintersOnStartup { get; set; } = true;
+
+        /// <summary>
+        /// מנוע Ghostscript: נתיב ל-gswin64c.exe. ריק = חיפוש אוטומטי (תיקיית gs ליד התוכנה, ואז C:\Program Files\gs).
+        /// </summary>
+        public string GhostscriptPath { get; set; } = "";
+
+        /// <summary>מנוע Ghostscript: "pxlmono" (שחור-לבן, ברירת מחדל) או "pxlcolor" (צבע).</summary>
+        public string GhostscriptDevice { get; set; } = "pxlmono";
+
+        /// <summary>
+        /// מנוע Ghostscript: מגש ודו-צדדי לכל מדפסת לפי שמה, כי הגדרות התור ב-Windows לא חלות על עבודה זו.
+        /// מדפסת שאינה ברשימה, או ערך ריק = ברירת המחדל של המדפסת.
+        /// </summary>
+        public System.Collections.Generic.Dictionary<string, GhostscriptPrinterSettings> GhostscriptPrinters { get; set; }
+            = new System.Collections.Generic.Dictionary<string, GhostscriptPrinterSettings>();
 
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
@@ -149,13 +165,23 @@ namespace MergeAndPrint
         }
     }
 
-    /// <summary>Values for <see cref="AppConfig.PrintEngine"/>. Anything other than IronPdf means Spire.</summary>
+    /// <summary>Values for <see cref="AppConfig.PrintEngine"/>. Anything unrecognised means Spire.</summary>
     public static class PrintEngines
     {
         public const string Spire = "Spire";
         public const string IronPdf = "IronPdf";
+        /// <summary>Ghostscript converts the PDF to PCL 6 and it goes to the queue as a RAW job (GhostscriptPrinter).</summary>
+        public const string Custom = "custom";
 
-        public static bool IsIronPdf(string engine) =>
-            string.Equals(engine?.Trim(), IronPdf, StringComparison.OrdinalIgnoreCase);
+        /// <summary>The engine name as configured, normalised to one of the constants.</summary>
+        public static string Normalize(string engine)
+        {
+            var value = engine?.Trim();
+            if (string.Equals(value, IronPdf, StringComparison.OrdinalIgnoreCase))
+                return IronPdf;
+            if (string.Equals(value, Custom, StringComparison.OrdinalIgnoreCase))
+                return Custom;
+            return Spire;
+        }
     }
 }
