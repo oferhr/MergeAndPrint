@@ -55,6 +55,9 @@
             tconfig = new System.Windows.Forms.TabPage();
             cboPrinter9 = new System.Windows.Forms.ComboBox();
             label14 = new System.Windows.Forms.Label();
+            lblPrintEngine = new System.Windows.Forms.Label();
+            cboPrintEngine = new System.Windows.Forms.ComboBox();
+            lblPrintEngineHint = new System.Windows.Forms.Label();
             txtSrcMinutes = new System.Windows.Forms.TextBox();
             label13 = new System.Windows.Forms.Label();
             btnBrowseSrc = new System.Windows.Forms.Button();
@@ -402,6 +405,9 @@
             // tconfig
             // 
             tconfig.BackColor = System.Drawing.Color.WhiteSmoke;
+            tconfig.Controls.Add(lblPrintEngineHint);
+            tconfig.Controls.Add(cboPrintEngine);
+            tconfig.Controls.Add(lblPrintEngine);
             tconfig.Controls.Add(btnSaveConfig);
             tconfig.Controls.Add(cboPrinter9);
             tconfig.Controls.Add(label14);
@@ -465,6 +471,37 @@
             cboPrinter9.Size = new System.Drawing.Size(286, 26);
             cboPrinter9.TabIndex = 37;
             cboPrinter9.SelectedIndexChanged += cboPrinter9_SelectedIndexChanged;
+            // 
+            // lblPrintEngine
+            // 
+            lblPrintEngine.AutoSize = true;
+            lblPrintEngine.Font = new System.Drawing.Font("Arial", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            lblPrintEngine.Location = new System.Drawing.Point(40, 224);
+            lblPrintEngine.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblPrintEngine.Name = "lblPrintEngine";
+            lblPrintEngine.Size = new System.Drawing.Size(92, 19);
+            lblPrintEngine.TabIndex = 40;
+            lblPrintEngine.Text = "מנוע הדפסה";
+            // 
+            // cboPrintEngine
+            // 
+            cboPrintEngine.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            cboPrintEngine.FormattingEnabled = true;
+            cboPrintEngine.Location = new System.Drawing.Point(40, 250);
+            cboPrintEngine.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            cboPrintEngine.Name = "cboPrintEngine";
+            cboPrintEngine.Size = new System.Drawing.Size(250, 26);
+            cboPrintEngine.TabIndex = 41;
+            // 
+            // lblPrintEngineHint
+            // 
+            lblPrintEngineHint.Font = new System.Drawing.Font("Arial", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            lblPrintEngineHint.Location = new System.Drawing.Point(40, 282);
+            lblPrintEngineHint.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblPrintEngineHint.Name = "lblPrintEngineHint";
+            lblPrintEngineHint.Size = new System.Drawing.Size(250, 60);
+            lblPrintEngineHint.TabIndex = 42;
+            lblPrintEngineHint.Text = "חל על הדפסת קובצי PDF. השינוי נכנס לתוקף אחרי שמירת הגדרות.";
             // 
             // label14
             // 
@@ -916,6 +953,9 @@
         private System.Windows.Forms.Label lbl9;
         private System.Windows.Forms.Button btn9;
         private System.Windows.Forms.ComboBox cboPrinter9;
+        private System.Windows.Forms.Label lblPrintEngine;
+        private System.Windows.Forms.ComboBox cboPrintEngine;
+        private System.Windows.Forms.Label lblPrintEngineHint;
         private System.Windows.Forms.Label label14;
     }
 }
