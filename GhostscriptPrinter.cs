@@ -16,8 +16,10 @@ namespace MergeAndPrint
     /// of a second, and the result is handed to the same Windows print queue as a RAW job, so the print server delivers
     /// it exactly as it delivers Spire's jobs. Nothing draws pages on this PC and the printer driver is bypassed.
     ///
-    /// Because the driver is bypassed, the queue's own tray/duplex settings do not apply: they come from
-    /// <see cref="AppConfig.GhostscriptPrinters"/> and go into the job's PJL header. Unset means the printer's default.
+    /// Because the driver is bypassed, it does not put the queue's tray/duplex settings into the job, so we do:
+    /// <see cref="ResolveSettings"/> reads them from Windows for the queue (the same per-user defaults Spire prints
+    /// with) and they go into the job's PJL header. A value in <see cref="AppConfig.GhostscriptPrinters"/> overrides
+    /// what is read from the queue.
     ///
     /// Settings and output checks follow Printers-POC2, which uses the same conversion in production at this client.
     /// Its own sending (raw socket :9100, job tracking, retries) is deliberately NOT reused: that is where its
@@ -55,7 +57,7 @@ namespace MergeAndPrint
                 ? "NOT FOUND (install Ghostscript or set GhostscriptPath in config.json)"
                 : exe;
             var printers = cfg.GhostscriptPrinters == null || cfg.GhostscriptPrinters.Count == 0
-                ? "none (printer defaults for tray and duplex)"
+                ? "none (tray and duplex taken from each queue's Windows settings)"
                 : string.Join("; ", cfg.GhostscriptPrinters.Select(p => $"'{p.Key}': tray={Show(p.Value?.Tray)}, duplex={Show(p.Value?.Duplex)}"));
             return $"Ghostscript: {where}, device={Device()}, printer settings: {printers}";
         }
@@ -67,7 +69,7 @@ namespace MergeAndPrint
         /// or the conversion is not trustworthy; nothing has been sent to the printer at that point, so the caller can
         /// safely print the file another way.
         /// </summary>
-        public static byte[] TryConvert(string file, string printerName, out string failure)
+        public static byte[] TryConvert(string file, GhostscriptPrinterSettings settings, out string failure)
         {
             failure = null;
             var exe = ExecutablePath;
@@ -77,7 +79,6 @@ namespace MergeAndPrint
                 return null;
             }
 
-            var settings = SettingsFor(printerName);
             var tempDir = Path.Combine(Path.GetTempPath(), "MergeAndPrint-gs");
             Directory.CreateDirectory(tempDir);
             var output = Path.Combine(tempDir, Guid.NewGuid().ToString("N") + ".pcl");
@@ -180,9 +181,15 @@ namespace MergeAndPrint
                 header.Append("@PJL SET DUPLEX=OFF\r\n");
             else if (duplex != null)
                 header.Append("@PJL SET DUPLEX=ON\r\n@PJL SET BINDING=").Append(duplex).Append("\r\n");
+            // Numeric form plus INPUTTRAY: this is what selects the tray on this client's HP printers in
+            // Printers-POC2's production runs ("@PJL SET MEDIASOURCE=3" + "INPUTTRAY=3" -> paper from Tray 3).
             var tray = TrayName(settings);
             if (tray != null)
+            {
                 header.Append("@PJL SET MEDIASOURCE=").Append(tray).Append("\r\n");
+                if (Regex.IsMatch(tray, @"^\d+$"))
+                    header.Append("@PJL SET INPUTTRAY=").Append(tray).Append("\r\n");
+            }
             header.Append("@PJL ENTER LANGUAGE=PCLXL\r\n");
 
             var body = new ReadOnlySpan<byte>(pcl, start, pcl.Length - start);
@@ -284,15 +291,158 @@ namespace MergeAndPrint
             }
         }
 
-        /// <summary>null = printer default; "2" or "Tray2" -> TRAY2; MANUAL / AUTO passed through.</summary>
-        private static string TrayName(GhostscriptPrinterSettings settings)
+        /// <summary>null = printer default; "2" or "Tray2" -> 2; MANUAL / AUTO passed through.</summary>
+        internal static string TrayName(GhostscriptPrinterSettings settings)
         {
             var value = (settings?.Tray ?? "").Trim().Replace(" ", "").ToUpperInvariant();
             if (value.Length == 0 || value == "DEFAULT")
                 return null;
-            if (Regex.IsMatch(value, @"^\d+$"))
-                return "TRAY" + value;
+            var numbered = Regex.Match(value, @"^(?:TRAY)?(\d+)$");
+            if (numbered.Success)
+                return numbered.Groups[1].Value;
             return Regex.IsMatch(value, @"^[A-Z0-9]+$") ? value : null;
+        }
+
+        /// <summary>
+        /// The tray and duplex to put in the job for <paramref name="printerName"/>: the queue's own settings in Windows
+        /// (what Spire would print with), each overridden by a non-empty value in config.json GhostscriptPrinters.
+        /// <paramref name="description"/> says where each value came from, for the log.
+        /// </summary>
+        public static GhostscriptPrinterSettings ResolveSettings(string printerName, out string description)
+        {
+            var configured = SettingsFor(printerName);
+            var queue = CachedQueueSettings(printerName, out var queueTray, out var queueDuplex);
+
+            var resolved = new GhostscriptPrinterSettings();
+            string trayFrom, duplexFrom;
+            if (!string.IsNullOrWhiteSpace(configured?.Tray))
+            {
+                resolved.Tray = configured.Tray.Trim();
+                trayFrom = "config.json";
+            }
+            else
+            {
+                resolved.Tray = queue?.Tray ?? "";
+                trayFrom = "queue: " + queueTray;
+            }
+            if (!string.IsNullOrWhiteSpace(configured?.Duplex))
+            {
+                resolved.Duplex = configured.Duplex.Trim();
+                duplexFrom = "config.json";
+            }
+            else
+            {
+                resolved.Duplex = queue?.Duplex ?? "";
+                duplexFrom = "queue: " + queueDuplex;
+            }
+
+            var tray = TrayName(resolved);
+            var duplex = DuplexMode(resolved);
+            description = $"tray={tray ?? "printer default"} ({trayFrom}), " +
+                          $"duplex={(duplex == null ? "printer default" : duplex.ToLowerInvariant())} ({duplexFrom})";
+            return resolved;
+        }
+
+        /// <summary>How long a queue's settings are reused. Reading them takes 0.4-1 s, too slow to repeat for every file.</summary>
+        private static readonly TimeSpan QueueCacheTime = TimeSpan.FromMinutes(1);
+
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTime Read, GhostscriptPrinterSettings Settings, string Tray, string Duplex)>
+            QueueCache = new System.Collections.Concurrent.ConcurrentDictionary<string, (DateTime, GhostscriptPrinterSettings, string, string)>(StringComparer.OrdinalIgnoreCase);
+
+        private static GhostscriptPrinterSettings CachedQueueSettings(string printerName, out string trayText, out string duplexText)
+        {
+            var key = printerName ?? "";
+            if (QueueCache.TryGetValue(key, out var hit) && DateTime.UtcNow - hit.Read < QueueCacheTime)
+            {
+                trayText = hit.Tray;
+                duplexText = hit.Duplex;
+                return hit.Settings;
+            }
+            var settings = ReadQueueSettings(printerName, out trayText, out duplexText);
+            if (settings != null)
+                QueueCache[key] = (DateTime.UtcNow, settings, trayText, duplexText);
+            return settings;
+        }
+
+        /// <summary>
+        /// Read the queue's paper source and duplex from Windows: the same defaults Spire's print job starts from.
+        /// The paper source is matched by name ("Tray 2", "מגש 2" -> 2); a source that is not a numbered tray
+        /// (automatic select, manual feed, a name we do not recognise) leaves the tray to the printer's default.
+        /// Returns null when the queue cannot be read; <paramref name="trayText"/> and <paramref name="duplexText"/>
+        /// describe what was found, for the log.
+        /// </summary>
+        internal static GhostscriptPrinterSettings ReadQueueSettings(string printerName, out string trayText, out string duplexText)
+        {
+            trayText = duplexText = "not read";
+            if (string.IsNullOrWhiteSpace(printerName))
+                return null;
+            try
+            {
+                var ps = new System.Drawing.Printing.PrinterSettings { PrinterName = printerName };
+                if (!ps.IsValid)
+                {
+                    trayText = duplexText = "printer not installed";
+                    return null;
+                }
+
+                var result = new GhostscriptPrinterSettings();
+                var source = ps.DefaultPageSettings.PaperSource;
+                var sourceName = source?.SourceName ?? "";
+                result.Tray = TrayFromSourceName(sourceName) ?? "";
+                trayText = $"'{sourceName}' (bin {source?.RawKind})" + (result.Tray.Length == 0 ? " = not a numbered tray" : "");
+
+                switch (ps.Duplex)
+                {
+                    case System.Drawing.Printing.Duplex.Simplex: result.Duplex = "Off"; break;
+                    case System.Drawing.Printing.Duplex.Vertical: result.Duplex = "LongEdge"; break;
+                    case System.Drawing.Printing.Duplex.Horizontal: result.Duplex = "ShortEdge"; break;
+                    default: result.Duplex = ""; break;
+                }
+                duplexText = ps.Duplex.ToString();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                trayText = duplexText = "could not read (" + ex.Message + ")";
+                return null;
+            }
+        }
+
+        /// <summary>"Tray 2", "HP Tray 2", "מגש 2" -> "2". Manual feed and anything else -> null (printer default).</summary>
+        internal static string TrayFromSourceName(string sourceName)
+        {
+            var name = sourceName ?? "";
+            if (Regex.IsMatch(name, @"manual|ידני", RegexOptions.IgnoreCase))
+                return null;   // "Manual Feed in Tray 1" is not Tray 1
+            var match = Regex.Match(name, @"(?:tray|מגש)\s*(\d+)", RegexOptions.IgnoreCase);
+            return match.Success ? match.Groups[1].Value : null;
+        }
+
+        /// <summary>
+        /// Log, once at start-up and off the UI thread, the tray and duplex the custom engine will use for each
+        /// configured printer, so a log file shows it before anything is printed.
+        /// </summary>
+        public static void LogQueueSettingsInBackground(IEnumerable<string> printerNames)
+        {
+            var names = printerNames.Where(n => !string.IsNullOrWhiteSpace(n))
+                .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (names.Count == 0)
+                return;
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                foreach (var name in names)
+                {
+                    try
+                    {
+                        ResolveSettings(name, out var description);
+                        SimpleLog.Info($"Custom engine settings for '{name}': {description}");
+                    }
+                    catch (Exception ex)
+                    {
+                        SimpleLog.Warning($"Custom engine settings for '{name}' could not be read: {ex.Message}");
+                    }
+                }
+            });
         }
 
         private static string SafeJobName(string name)
@@ -385,10 +535,10 @@ namespace MergeAndPrint
     /// <summary>Per-printer job settings for the Ghostscript engine (the queue's own settings do not apply to RAW jobs).</summary>
     public class GhostscriptPrinterSettings
     {
-        /// <summary>Paper tray: empty = printer default, or 1, 2, 3 (= TRAY1...), MANUAL.</summary>
+        /// <summary>Paper tray: empty = the queue's setting in Windows, or 1, 2, 3 (Tray 1...), MANUAL, AUTO.</summary>
         public string Tray { get; set; } = "";
 
-        /// <summary>Two-sided: empty = printer default, Off, LongEdge (book style) or ShortEdge.</summary>
+        /// <summary>Two-sided: empty = the queue's setting in Windows, Off, LongEdge (book style) or ShortEdge.</summary>
         public string Duplex { get; set; } = "";
     }
 }

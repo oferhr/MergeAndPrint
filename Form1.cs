@@ -66,6 +66,8 @@ namespace MergeAndPrint
             LogConfiguration();
             PrinterCheck.StartInBackground(printers,
                 new[] { Printer1, Printer2, Printer3, Printer11, Printer22, Printer33, Printer9 });
+            GhostscriptPrinter.LogQueueSettingsInBackground(
+                new[] { Printer1, Printer2, Printer3, Printer11, Printer22, Printer33, Printer9 });
 
             updateScreen();
             updateDirectories();
@@ -1257,15 +1259,18 @@ namespace MergeAndPrint
                 pages = doc.Pages.Count;
             }
 
+            // The driver is bypassed, so the queue's tray/duplex are read here and written into the job.
+            var settings = GhostscriptPrinter.ResolveSettings(printerName, out var settingsText);
+
             var convertWatch = Stopwatch.StartNew();
-            var job = GhostscriptPrinter.TryConvert(file, printerName, out fallbackReason);
+            var job = GhostscriptPrinter.TryConvert(file, settings, out fallbackReason);
             if (job == null)
                 return 0;
             var convertMs = convertWatch.ElapsedMilliseconds;
 
             var sendWatch = Stopwatch.StartNew();
             GhostscriptPrinter.SendRaw(printerName, Path.GetFileName(file), job);
-            SimpleLog.Info($"Ghostscript: converted in {convertMs} ms, {job.Length / 1024} KB job queued in {sendWatch.ElapsedMilliseconds} ms");
+            SimpleLog.Info($"Ghostscript: {settingsText}; converted in {convertMs} ms, {job.Length / 1024} KB job queued in {sendWatch.ElapsedMilliseconds} ms");
             return pages;
         }
 
