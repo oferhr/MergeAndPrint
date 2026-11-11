@@ -16,6 +16,24 @@ namespace MergeAndPrint
         [STAThread]
         static void Main()
         {
+            // Errors nobody catches: log them before the process dies, so a "crash without a message" leaves a trace.
+            // (A native crash inside a library, or the process being ended from Task Manager / "Not Responding",
+            // cannot be logged; a log that just stops without "Shutdown" points to one of those.)
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                LogFatal("Unhandled exception (app is closing: " + e.IsTerminating + ")", e.ExceptionObject as Exception);
+            TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                LogFatal("Unobserved background task exception", e.Exception);
+                e.SetObserved();
+            };
+            Application.ThreadException += (s, e) =>
+            {
+                LogFatal("Unhandled exception on the UI thread", e.Exception);
+                MessageBox.Show("אירעה שגיאה לא צפויה. הפרטים נרשמו בקובץ הלוג." + Environment.NewLine + e.Exception.Message,
+                    "שגיאה", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            };
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+
             Application.EnableVisualStyles();
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.SetCompatibleTextRenderingDefault(false);
@@ -46,6 +64,18 @@ namespace MergeAndPrint
             Warmup.Start();
             Application.Run(new Form1());
             SimpleLogger.SimpleLog.Info("Shutdown");
+        }
+
+        private static void LogFatal(string what, Exception ex)
+        {
+            try
+            {
+                SimpleLogger.SimpleLog.Log(what + ": " + (ex?.ToString() ?? "(no exception details)"), SimpleLogger.SimpleLog.Severity.Error, useBackgroundTask: false);
+            }
+            catch
+            {
+                // Logging must never throw from a crash handler.
+            }
         }
 
         private static bool IsWritable(string dir)
