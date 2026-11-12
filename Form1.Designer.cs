@@ -58,6 +58,8 @@
             lblPrintEngine = new System.Windows.Forms.Label();
             cboPrintEngine = new System.Windows.Forms.ComboBox();
             lblPrintEngineHint = new System.Windows.Forms.Label();
+            btnPrinterCapture = new System.Windows.Forms.Button();
+            lblPrinterCaptureHint = new System.Windows.Forms.Label();
             txtSrcMinutes = new System.Windows.Forms.TextBox();
             label13 = new System.Windows.Forms.Label();
             btnBrowseSrc = new System.Windows.Forms.Button();
@@ -406,6 +408,8 @@
             // 
             tconfig.BackColor = System.Drawing.Color.WhiteSmoke;
             tconfig.Controls.Add(lblPrintEngineHint);
+            tconfig.Controls.Add(btnPrinterCapture);
+            tconfig.Controls.Add(lblPrinterCaptureHint);
             tconfig.Controls.Add(cboPrintEngine);
             tconfig.Controls.Add(lblPrintEngine);
             tconfig.Controls.Add(btnSaveConfig);
@@ -502,6 +506,28 @@
             lblPrintEngineHint.Size = new System.Drawing.Size(250, 60);
             lblPrintEngineHint.TabIndex = 42;
             lblPrintEngineHint.Text = "חל על הדפסת קובצי PDF. השינוי נכנס לתוקף אחרי שמירת הגדרות.";
+            //
+            // btnPrinterCapture
+            //
+            btnPrinterCapture.Font = new System.Drawing.Font("Arial", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
+            btnPrinterCapture.Location = new System.Drawing.Point(40, 352);
+            btnPrinterCapture.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
+            btnPrinterCapture.Name = "btnPrinterCapture";
+            btnPrinterCapture.Size = new System.Drawing.Size(250, 35);
+            btnPrinterCapture.TabIndex = 43;
+            btnPrinterCapture.Text = "בדיקת הגדרות מדפסות";
+            btnPrinterCapture.UseVisualStyleBackColor = true;
+            btnPrinterCapture.Click += btnPrinterCapture_Click;
+            //
+            // lblPrinterCaptureHint
+            //
+            lblPrinterCaptureHint.Font = new System.Drawing.Font("Arial", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            lblPrinterCaptureHint.Location = new System.Drawing.Point(40, 392);
+            lblPrinterCaptureHint.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            lblPrinterCaptureHint.Name = "lblPrinterCaptureHint";
+            lblPrinterCaptureHint.Size = new System.Drawing.Size(250, 60);
+            lblPrinterCaptureHint.TabIndex = 44;
+            lblPrinterCaptureHint.Text = "לא מודפס אף דף. שומר לקובץ את מה שכל מדפסת הייתה מקבלת, לשליחה למפתח.";
             // 
             // label14
             // 
@@ -956,6 +982,8 @@
         private System.Windows.Forms.Label lblPrintEngine;
         private System.Windows.Forms.ComboBox cboPrintEngine;
         private System.Windows.Forms.Label lblPrintEngineHint;
+        private System.Windows.Forms.Button btnPrinterCapture;
+        private System.Windows.Forms.Label lblPrinterCaptureHint;
         private System.Windows.Forms.Label label14;
     }
 }

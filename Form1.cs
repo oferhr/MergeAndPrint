@@ -143,6 +143,64 @@ namespace MergeAndPrint
         }
 
         /// <summary>
+        /// Printer settings check (PrinterCapture): every configured queue gets a test document through its driver,
+        /// written to a file instead of the printer, so nothing is printed. Runs off the UI thread; at the end the zip
+        /// to send is shown in Explorer.
+        /// </summary>
+        private void btnPrinterCapture_Click(object sender, EventArgs e)
+        {
+            var printers = new[]
+            {
+                new KeyValuePair<string, string>("1", Printer1),
+                new KeyValuePair<string, string>("2", Printer2),
+                new KeyValuePair<string, string>("3", Printer3),
+                new KeyValuePair<string, string>("1_999", Printer11),
+                new KeyValuePair<string, string>("2_999", Printer22),
+                new KeyValuePair<string, string>("3_999", Printer33),
+                new KeyValuePair<string, string>("9", Printer9)
+            };
+            if (printers.All(p => string.IsNullOrWhiteSpace(p.Value)))
+            {
+                MessageBox.Show("לא הוגדרו מדפסות.", "בדיקת הגדרות מדפסות", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var originalText = btnPrinterCapture.Text;
+            btnPrinterCapture.Enabled = false;
+            SimpleLog.Info("Printer capture started (print to file, nothing is printed)");
+            var worker = new Thread(() =>
+            {
+                string zip = null, error = null;
+                try
+                {
+                    zip = PrinterCapture.Run(printers, step => BeginInvoke(new Action(() => btnPrinterCapture.Text = step)));
+                }
+                catch (Exception ex)
+                {
+                    error = ex.Message;
+                    SimpleLog.Log(ex);
+                }
+                BeginInvoke(new Action(() =>
+                {
+                    btnPrinterCapture.Text = originalText;
+                    btnPrinterCapture.Enabled = true;
+                    if (zip == null)
+                    {
+                        MessageBox.Show("הבדיקה נכשלה: " + error, "בדיקת הגדרות מדפסות", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                    MessageBox.Show("הבדיקה הסתיימה ולא הודפס דבר." + Environment.NewLine +
+                        "יש לשלוח למפתח את הקובץ שיסומן עכשיו בחלון שייפתח:" + Environment.NewLine + zip,
+                        "בדיקת הגדרות מדפסות", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    try { Process.Start("explorer.exe", "/select,\"" + zip + "\""); } catch { /* the path is in the message */ }
+                }));
+            })
+            { IsBackground = true, Name = "PrinterCapture" };
+            worker.SetApartmentState(ApartmentState.STA);
+            worker.Start();
+        }
+
+        /// <summary>
         /// שמירת ההגדרות שבמסך לקובץ config.json.
         /// זו הפעולה היחידה שכותבת לקובץ - שינוי בשדות במסך אינו נשמר עד לחיצה על הכפתור.
         /// </summary>
