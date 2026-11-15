@@ -49,6 +49,13 @@ namespace MergeAndPrint
         public string GhostscriptDevice { get; set; } = "pxlmono";
 
         /// <summary>
+        /// מנוע Ghostscript: הידוק לכל המדפסות (אפשר לשנות למדפסת מסוימת ב-GhostscriptPrinters).
+        /// "RIGHT_1PT" = סיכה אחת מימין (מה שהדרייבר של HP שולח אצל הלקוח), "LEFT_1PT", "LEFT_2PTS" וכו', או "Off".
+        /// הדרייבר עוקף במצב מהיר, ולכן ההידוק נשלח מכאן.
+        /// </summary>
+        public string GhostscriptStaple { get; set; } = "RIGHT_1PT";
+
+        /// <summary>
         /// מנוע Ghostscript: מגש ודו-צדדי לכל מדפסת לפי שמה, כי הגדרות התור ב-Windows לא חלות על עבודה זו.
         /// מדפסת שאינה ברשימה, או ערך ריק = ברירת המחדל של המדפסת.
         /// </summary>
