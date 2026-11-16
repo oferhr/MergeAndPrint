@@ -201,7 +201,17 @@ namespace MergeAndPrint
             }
             header.Append("@PJL ENTER LANGUAGE=PCLXL\r\n");
 
-            var body = new ReadOnlySpan<byte>(pcl, start, pcl.Length - start);
+            ReadOnlySpan<byte> body = new ReadOnlySpan<byte>(pcl, start, pcl.Length - start);
+            // The PJL tray lines above are not enough: Ghostscript marks every page "auto-select tray", and the
+            // printer obeys the page over the PJL (the client's HP fed every page from the plain-paper tray).
+            // Replace that mark on each page with the value the HP driver itself writes for the tray.
+            var pageTray = PageTrayValue(tray);
+            if (pageTray != null)
+            {
+                body = SetPageTray(body.ToArray(), pageTray, out var pages);
+                if (pages == 0)
+                    SimpleLog.Warning($"Ghostscript: could not set tray {tray} on the pages of '{jobName}'; the printer may choose the tray itself");
+            }
             var endsWithUel = body.EndsWith(Encoding.ASCII.GetBytes(Uel));
             // HP form: UEL immediately followed by @PJL EOJ, then a final UEL.
             var footer = (endsWithUel ? "" : Uel) + "@PJL EOJ\r\n" + Uel;
@@ -298,6 +308,64 @@ namespace MergeAndPrint
                 case "SHORTEDGE": case "SHORT": case "TUMBLE": return "SHORTEDGE";
                 default: return "LONGEDGE";   // ON, YES, TRUE, LONGEDGE
             }
+        }
+
+        /// <summary>
+        /// The PCL XL MediaSource value (already encoded, without the attribute id) for a tray, as the HP Universal
+        /// PCL 6 driver writes it: Tray 3 = 5 and Tray 4 = 7 (seen in the client's driver output), Tray 1 = 3 and
+        /// Tray 2 = 4 (PCL XL standard), Tray 5 and up as the text "TRAY5" (seen for Tray 5). null = leave Ghostscript's.
+        /// </summary>
+        internal static byte[] PageTrayValue(string tray)
+        {
+            switch (tray)
+            {
+                case null: return null;
+                case "MANUAL": return new byte[] { 0xC0, 2 };
+                case "1": return new byte[] { 0xC0, 3 };
+                case "2": return new byte[] { 0xC0, 4 };
+                case "3": return new byte[] { 0xC0, 5 };
+                case "4": return new byte[] { 0xC0, 7 };
+            }
+            if (!int.TryParse(tray, out var n) || n < 5 || n > 99)
+                return null;
+            var text = Encoding.ASCII.GetBytes("TRAY" + n);
+            var value = new byte[4 + text.Length];
+            value[0] = 0xC8;                     // ubyte_array
+            value[1] = 0xC1;                     // length as uint16
+            value[2] = (byte)text.Length;
+            value[3] = 0;
+            text.CopyTo(value, 4);
+            return value;
+        }
+
+        /// <summary>
+        /// Replace Ghostscript's per-page "MediaSource = auto select" (ubyte 1, attribute 0x26) with
+        /// <paramref name="value"/>. Only an occurrence followed by nothing but ubyte attributes and then
+        /// BeginPage (0x43) is touched, so image data that happens to contain the same bytes is left alone.
+        /// </summary>
+        internal static byte[] SetPageTray(byte[] pxl, byte[] value, out int pages)
+        {
+            pages = 0;
+            var output = new System.IO.MemoryStream(pxl.Length + 64);
+            var copied = 0;
+            for (var i = 0; i + 4 < pxl.Length; i++)
+            {
+                if (pxl[i] != 0xC0 || pxl[i + 1] != 0x01 || pxl[i + 2] != 0xF8 || pxl[i + 3] != 0x26)
+                    continue;
+                var j = i + 4;
+                while (j + 3 < pxl.Length && pxl[j] == 0xC0 && pxl[j + 2] == 0xF8)
+                    j += 4;
+                if (j >= pxl.Length || pxl[j] != 0x43)
+                    continue;
+                output.Write(pxl, copied, i - copied);
+                output.Write(value, 0, value.Length);
+                output.Write(pxl, i + 2, 2);     // F8 26
+                copied = i + 4;
+                pages++;
+                i += 3;
+            }
+            output.Write(pxl, copied, pxl.Length - copied);
+            return output.ToArray();
         }
 
         /// <summary>null = no staple; otherwise the HP PROCESSINGOPTION value, e.g. RIGHT_1PT.</summary>

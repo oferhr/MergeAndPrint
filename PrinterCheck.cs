@@ -217,8 +217,12 @@ namespace MergeAndPrint
             {
                 using (var client = new TcpClient())
                 {
-                    if (!client.ConnectAsync(host, port).Wait(ConnectTimeoutMs))
+                    var connect = client.ConnectAsync(host, port);
+                    if (!connect.Wait(ConnectTimeoutMs))
                     {
+                        // The abandoned attempt fails later when the client is disposed; observe it so it is not
+                        // reported as an unhandled error in the log.
+                        connect.ContinueWith(t => _ = t.Exception, System.Threading.Tasks.TaskContinuationOptions.OnlyOnFaulted);
                         error = $"could not connect within {ConnectTimeoutMs / 1000} s (port blocked or printer off?)";
                         return false;
                     }
