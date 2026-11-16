@@ -58,8 +58,8 @@ namespace MergeAndPrint
                 : exe;
             var printers = cfg.GhostscriptPrinters == null || cfg.GhostscriptPrinters.Count == 0
                 ? "none (tray and duplex taken from each queue's Windows settings)"
-                : string.Join("; ", cfg.GhostscriptPrinters.Select(p => $"'{p.Key}': tray={Show(p.Value?.Tray)}, duplex={Show(p.Value?.Duplex)}"));
-            return $"Ghostscript: {where}, device={Device()}, printer settings: {printers}";
+                : string.Join("; ", cfg.GhostscriptPrinters.Select(p => $"'{p.Key}': tray={Show(p.Value?.Tray)}, duplex={Show(p.Value?.Duplex)}, staple={Show(p.Value?.Staple)}"));
+            return $"Ghostscript: {where}, device={Device()}, staple={Show(cfg.GhostscriptStaple)}, printer settings: {printers}";
         }
 
         private static string Show(string value) => string.IsNullOrWhiteSpace(value) ? "default" : value.Trim();
@@ -190,6 +190,15 @@ namespace MergeAndPrint
                 if (Regex.IsMatch(tray, @"^\d+$"))
                     header.Append("@PJL SET INPUTTRAY=").Append(tray).Append("\r\n");
             }
+            // Same lines the HP Universal PCL 6 driver sends for "1 staple, right" on this client's queues.
+            var staple = StapleOption(settings);
+            if (staple != null)
+            {
+                header.Append("@PJL SET PROCESSINGACTION=APPEND\r\n");
+                header.Append("@PJL SET PROCESSINGTYPE=\"STAPLING\"\r\n");
+                header.Append("@PJL SET PROCESSINGOPTION=\"").Append(staple).Append("\"\r\n");
+                header.Append("@PJL SET PROCESSINGBOUNDARY=MOPY\r\n");
+            }
             header.Append("@PJL ENTER LANGUAGE=PCLXL\r\n");
 
             var body = new ReadOnlySpan<byte>(pcl, start, pcl.Length - start);
@@ -291,6 +300,15 @@ namespace MergeAndPrint
             }
         }
 
+        /// <summary>null = no staple; otherwise the HP PROCESSINGOPTION value, e.g. RIGHT_1PT.</summary>
+        internal static string StapleOption(GhostscriptPrinterSettings settings)
+        {
+            var value = (settings?.Staple ?? "").Trim().Replace(" ", "").ToUpperInvariant();
+            if (value.Length == 0 || value == "OFF" || value == "NONE" || !Regex.IsMatch(value, @"^[A-Z0-9_]+$"))
+                return null;
+            return value;
+        }
+
         /// <summary>null = printer default; "2" or "Tray2" -> 2; MANUAL / AUTO passed through.</summary>
         internal static string TrayName(GhostscriptPrinterSettings settings)
         {
@@ -336,10 +354,24 @@ namespace MergeAndPrint
                 duplexFrom = "queue: " + queueDuplex;
             }
 
+            string stapleFrom;
+            if (!string.IsNullOrWhiteSpace(configured?.Staple))
+            {
+                resolved.Staple = configured.Staple.Trim();
+                stapleFrom = "config.json GhostscriptPrinters";
+            }
+            else
+            {
+                resolved.Staple = AppConfig.Current.GhostscriptStaple ?? "";
+                stapleFrom = "config.json GhostscriptStaple";
+            }
+
             var tray = TrayName(resolved);
             var duplex = DuplexMode(resolved);
+            var staple = StapleOption(resolved);
             description = $"tray={tray ?? "printer default"} ({trayFrom}), " +
-                          $"duplex={(duplex == null ? "printer default" : duplex.ToLowerInvariant())} ({duplexFrom})";
+                          $"duplex={(duplex == null ? "printer default" : duplex.ToLowerInvariant())} ({duplexFrom}), " +
+                          $"staple={(staple ?? "off")} ({stapleFrom})";
             return resolved;
         }
 
@@ -540,5 +572,8 @@ namespace MergeAndPrint
 
         /// <summary>Two-sided: empty = the queue's setting in Windows, Off, LongEdge (book style) or ShortEdge.</summary>
         public string Duplex { get; set; } = "";
+
+        /// <summary>Staple: empty = GhostscriptStaple in config.json, Off, or an HP option such as RIGHT_1PT, LEFT_1PT, LEFT_2PTS.</summary>
+        public string Staple { get; set; } = "";
     }
 }

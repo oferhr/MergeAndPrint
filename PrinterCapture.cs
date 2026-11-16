@@ -48,17 +48,28 @@ namespace MergeAndPrint
                 report.AppendLine($"=== {name}  (used for: {usedBy})");
                 try
                 {
-                    var file = Path.Combine(dir, $"{index:00}_{SafeFileName(name)}.prn");
+                    var describeWatch = Stopwatch.StartNew();
                     report.Append(Describe(name));
-                    var watch = Stopwatch.StartNew();
-                    CaptureOne(name, file);
-                    var size = WaitForFile(file);
-                    var line = size > 0
-                        ? $"captured {size / 1024} KB in {watch.ElapsedMilliseconds} ms -> {Path.GetFileName(file)}"
-                        : $"NO OUTPUT FILE after {watch.ElapsedMilliseconds} ms (the driver may not support print-to-file, " +
-                          "or the job is waiting in the queue, e.g. for manual duplex; such a job can be deleted)";
-                    report.AppendLine("  " + line);
-                    SimpleLog.Info($"Printer capture: '{name}' {line}");
+                    report.AppendLine($"  reading the settings above took {describeWatch.ElapsedMilliseconds} ms");
+                    // The first queue twice: shows whether the delay is paid on every job or only on the first one.
+                    var runs = index == 1 ? 2 : 1;
+                    for (var run = 1; run <= runs; run++)
+                    {
+                        var suffix = run == 1 ? "" : "_again";
+                        var file = Path.Combine(dir, $"{index:00}_{SafeFileName(name)}{suffix}.prn");
+                        var watch = Stopwatch.StartNew();
+                        var steps = CaptureOne(name, file);
+                        var spooled = watch.ElapsedMilliseconds;
+                        var size = WaitForFile(file);
+                        var line = (run == 1 ? "" : "same queue again: ") + (size > 0
+                            ? $"captured {size / 1024} KB in {watch.ElapsedMilliseconds} ms -> {Path.GetFileName(file)}"
+                            : $"NO OUTPUT FILE after {watch.ElapsedMilliseconds} ms (the driver may not support print-to-file, " +
+                              "or the job is waiting in the queue, e.g. for manual duplex; such a job can be deleted)");
+                        steps += $", Windows writing the file {watch.ElapsedMilliseconds - spooled} ms (includes a 2 s check that it is complete)";
+                        report.AppendLine("  " + line);
+                        report.AppendLine("  steps: " + steps);
+                        SimpleLog.Info($"Printer capture: '{name}' {line}; steps: {steps}");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -110,14 +121,26 @@ namespace MergeAndPrint
         /// <summary>
         /// Print a small test document with the queue's default settings, redirected to <paramref name="file"/>.
         /// PrintToFile makes Windows write the driver's output to the file instead of sending it to the printer.
+        /// Returns how long each step took, to find where a slow driver spends its time.
         /// </summary>
-        private static void CaptureOne(string printerName, string file)
+        private static string CaptureOne(string printerName, string file)
         {
+            var watch = Stopwatch.StartNew();
+            var marks = new List<string>();
+            long last = 0;
+            void Mark(string step)
+            {
+                var now = watch.ElapsedMilliseconds;
+                marks.Add($"{step} {now - last} ms");
+                last = now;
+            }
+
             using (var doc = new PrintDocument())
             {
                 doc.PrinterSettings.PrinterName = printerName;
                 if (!doc.PrinterSettings.IsValid)
                     throw new InvalidOperationException("printer is not installed on this PC");
+                Mark("open printer");
                 // Safety first: without a file name nothing may be printed at all.
                 doc.PrinterSettings.PrintToFile = true;
                 doc.PrinterSettings.PrintFileName = file;
@@ -125,22 +148,33 @@ namespace MergeAndPrint
                     throw new InvalidOperationException("could not redirect the job to a file; nothing was sent");
                 doc.DocumentName = "MergeAndPrint printer check (not printed)";
                 doc.PrintController = new StandardPrintController();
+                // Same page settings call Spire's print path makes (copies the queue's settings).
+                _ = doc.DefaultPageSettings.Landscape;
+                Mark("read page settings");
 
                 var page = 0;
                 using (var font = new Font("Arial", 28, FontStyle.Bold))
                 using (var small = new Font("Arial", 12))
                 {
+                    doc.BeginPrint += (s, e) => Mark("prepare");
+                    doc.QueryPageSettings += (s, e) => { if (page == 0) Mark("start job"); };
                     doc.PrintPage += (s, e) =>
                     {
+                        // Before page 1 this covers starting the job in the driver (CreateDC / StartDoc / StartPage),
+                        // later it covers finishing the previous page and starting this one.
+                        Mark(page == 0 ? "start first page" : $"page {page}");
                         page++;
                         e.Graphics.DrawString($"Page {page} of {TestPages}", font, Brushes.Black, 80, 120);
                         e.Graphics.DrawString($"MergeAndPrint printer check - {printerName}", small, Brushes.Black, 80, 200);
                         e.Graphics.DrawRectangle(Pens.Black, 60, 100, 500, 140);
                         e.HasMorePages = page < TestPages;
                     };
+                    doc.EndPrint += (s, e) => Mark($"page {page} drawn");
                     doc.Print();
+                    Mark("finish last page and job");
                 }
             }
+            return string.Join(", ", marks);
         }
 
         /// <summary>
