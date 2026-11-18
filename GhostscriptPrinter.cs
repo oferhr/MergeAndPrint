@@ -58,7 +58,8 @@ namespace MergeAndPrint
                 : exe;
             var printers = cfg.GhostscriptPrinters == null || cfg.GhostscriptPrinters.Count == 0
                 ? "none (tray and duplex taken from each queue's Windows settings)"
-                : string.Join("; ", cfg.GhostscriptPrinters.Select(p => $"'{p.Key}': tray={Show(p.Value?.Tray)}, duplex={Show(p.Value?.Duplex)}, staple={Show(p.Value?.Staple)}"));
+                : string.Join("; ", cfg.GhostscriptPrinters.Select(p => $"'{p.Key}': tray={Show(p.Value?.Tray)}, duplex={Show(p.Value?.Duplex)}, staple={Show(p.Value?.Staple)}" +
+                    (FirstPagesTray(p.Value) == null ? "" : $", first {p.Value.FirstPages} page(s) tray={FirstPagesTray(p.Value)}")));
             return $"Ghostscript: {where}, device={Device()}, staple={Show(cfg.GhostscriptStaple)}, printer settings: {printers}";
         }
 
@@ -205,10 +206,13 @@ namespace MergeAndPrint
             // The PJL tray lines above are not enough: Ghostscript marks every page "auto-select tray", and the
             // printer obeys the page over the PJL (the client's HP fed every page from the plain-paper tray).
             // Replace that mark on each page with the value the HP driver itself writes for the tray.
+            // The first pages of each file can come from another tray (the client's letterhead in Tray 2).
             var pageTray = PageTrayValue(tray);
-            if (pageTray != null)
+            var firstTray = FirstPagesTray(settings);
+            var firstValue = PageTrayValue(firstTray);
+            if (pageTray != null || firstValue != null)
             {
-                body = SetPageTray(body.ToArray(), pageTray, out var pages);
+                body = SetPageTray(body.ToArray(), page => page <= settings.FirstPages && firstValue != null ? firstValue : pageTray, out var pages);
                 if (pages == 0)
                     SimpleLog.Warning($"Ghostscript: could not set tray {tray} on the pages of '{jobName}'; the printer may choose the tray itself");
             }
@@ -291,10 +295,26 @@ namespace MergeAndPrint
 
         private static GhostscriptPrinterSettings SettingsFor(string printerName)
         {
-            var all = AppConfig.Current.GhostscriptPrinters;
+            var cfg = AppConfig.Current;
+            var all = cfg.GhostscriptPrinters;
             if (all == null || string.IsNullOrEmpty(printerName))
                 return null;
-            return all.FirstOrDefault(p => string.Equals(p.Key?.Trim(), printerName.Trim(), StringComparison.OrdinalIgnoreCase)).Value;
+            var name = printerName.Trim();
+            var byName = all.FirstOrDefault(p => string.Equals(p.Key?.Trim(), name, StringComparison.OrdinalIgnoreCase)).Value;
+            if (byName != null)
+                return byName;
+            // Also by the folder the printer is chosen for on the settings tab: "1", "2", "3", "11", "22", "33", "9".
+            var slots = new[] { ("1", cfg.Printer1), ("2", cfg.Printer2), ("3", cfg.Printer3), ("11", cfg.Printer11),
+                                ("22", cfg.Printer22), ("33", cfg.Printer33), ("9", cfg.Printer9) };
+            foreach (var (slot, printer) in slots)
+            {
+                if (!string.Equals(printer?.Trim(), name, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                var bySlot = all.FirstOrDefault(p => p.Key?.Trim() == slot).Value;
+                if (bySlot != null)
+                    return bySlot;
+            }
+            return null;
         }
 
         /// <summary>null = printer default, otherwise OFF, LONGEDGE or SHORTEDGE.</summary>
@@ -343,9 +363,17 @@ namespace MergeAndPrint
         /// <paramref name="value"/>. Only an occurrence followed by nothing but ubyte attributes and then
         /// BeginPage (0x43) is touched, so image data that happens to contain the same bytes is left alone.
         /// </summary>
-        internal static byte[] SetPageTray(byte[] pxl, byte[] value, out int pages)
+        internal static byte[] SetPageTray(byte[] pxl, byte[] value, out int pages) =>
+            SetPageTray(pxl, _ => value, out pages);
+
+        /// <summary>
+        /// As above, with the value chosen for each page: <paramref name="valueForPage"/> gets the page number
+        /// (1 = first) and returns the encoded MediaSource, or null to leave that page as Ghostscript wrote it.
+        /// </summary>
+        internal static byte[] SetPageTray(byte[] pxl, Func<int, byte[]> valueForPage, out int pages)
         {
             pages = 0;
+            var page = 0;
             var output = new System.IO.MemoryStream(pxl.Length + 64);
             var copied = 0;
             for (var i = 0; i + 4 < pxl.Length; i++)
@@ -356,6 +384,9 @@ namespace MergeAndPrint
                 while (j + 3 < pxl.Length && pxl[j] == 0xC0 && pxl[j + 2] == 0xF8)
                     j += 4;
                 if (j >= pxl.Length || pxl[j] != 0x43)
+                    continue;
+                var value = valueForPage(++page);
+                if (value == null)
                     continue;
                 output.Write(pxl, copied, i - copied);
                 output.Write(value, 0, value.Length);
@@ -377,10 +408,16 @@ namespace MergeAndPrint
             return value;
         }
 
+        /// <summary>The tray for the first pages of each file, or null when there is no such rule.</summary>
+        internal static string FirstPagesTray(GhostscriptPrinterSettings settings) =>
+            settings != null && settings.FirstPages > 0 ? NormalizeTray(settings.FirstPagesTray) : null;
+
         /// <summary>null = printer default; "2" or "Tray2" -> 2; MANUAL / AUTO passed through.</summary>
-        internal static string TrayName(GhostscriptPrinterSettings settings)
+        internal static string TrayName(GhostscriptPrinterSettings settings) => NormalizeTray(settings?.Tray);
+
+        private static string NormalizeTray(string tray)
         {
-            var value = (settings?.Tray ?? "").Trim().Replace(" ", "").ToUpperInvariant();
+            var value = (tray ?? "").Trim().Replace(" ", "").ToUpperInvariant();
             if (value.Length == 0 || value == "DEFAULT")
                 return null;
             var numbered = Regex.Match(value, @"^(?:TRAY)?(\d+)$");
@@ -434,10 +471,15 @@ namespace MergeAndPrint
                 stapleFrom = "config.json GhostscriptStaple";
             }
 
+            resolved.FirstPages = Math.Max(0, configured?.FirstPages ?? 0);
+            resolved.FirstPagesTray = configured?.FirstPagesTray?.Trim() ?? "";
+
             var tray = TrayName(resolved);
             var duplex = DuplexMode(resolved);
             var staple = StapleOption(resolved);
-            description = $"tray={tray ?? "printer default"} ({trayFrom}), " +
+            var firstTray = FirstPagesTray(resolved);
+            description = (firstTray == null ? "" : $"first {resolved.FirstPages} page(s) of each file tray={firstTray} (config.json), then ") +
+                          $"tray={tray ?? "printer default"} ({trayFrom}), " +
                           $"duplex={(duplex == null ? "printer default" : duplex.ToLowerInvariant())} ({duplexFrom}), " +
                           $"staple={(staple ?? "off")} ({stapleFrom})";
             return resolved;
@@ -643,5 +685,11 @@ namespace MergeAndPrint
 
         /// <summary>Staple: empty = GhostscriptStaple in config.json, Off, or an HP option such as RIGHT_1PT, LEFT_1PT, LEFT_2PTS.</summary>
         public string Staple { get; set; } = "";
+
+        /// <summary>How many pages at the start of each file come from <see cref="FirstPagesTray"/> (0 = none).</summary>
+        public int FirstPages { get; set; }
+
+        /// <summary>The tray for the first <see cref="FirstPages"/> pages of each file, e.g. 2; the rest use <see cref="Tray"/>.</summary>
+        public string FirstPagesTray { get; set; } = "";
     }
 }

@@ -58,6 +58,8 @@ namespace MergeAndPrint
         /// <summary>
         /// מנוע Ghostscript: מגש ודו-צדדי לכל מדפסת לפי שמה, כי הגדרות התור ב-Windows לא חלות על עבודה זו.
         /// מדפסת שאינה ברשימה, או ערך ריק = ברירת המחדל של המדפסת.
+        /// המפתח: שם המדפסת, או מספר התיקיה שהיא נבחרה לה בלשונית ההגדרות ("1", "2", "3", "11", "22", "33", "9").
+        /// FirstPages + FirstPagesTray: כמה עמודים ראשונים בכל קובץ יודפסו ממגש אחר (למשל 2 עמודים ממגש 2).
         /// </summary>
         public System.Collections.Generic.Dictionary<string, GhostscriptPrinterSettings> GhostscriptPrinters { get; set; }
             = new System.Collections.Generic.Dictionary<string, GhostscriptPrinterSettings>();
