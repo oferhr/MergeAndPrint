@@ -44,6 +44,7 @@ namespace MergeAndPrint
         public Form1()
         {
             InitializeComponent();
+            BuildTraysTab();
 
 
             ShlomoName = ConfigurationManager.AppSettings["shlomo"];
@@ -102,6 +103,7 @@ namespace MergeAndPrint
                 Printer33 = SelectPrinter(cboPrinter33, cfg.Printer33);
                 Printer9 = SelectPrinter(cboPrinter9, cfg.Printer9);
                 SelectPrintEngine(cfg.PrintEngine);
+                LoadTraysToScreen(cfg);
             }
             finally
             {
@@ -227,6 +229,7 @@ namespace MergeAndPrint
                 cfg.Printer9 = Printer9 ?? "";
                 if (cboPrintEngine.SelectedItem is PrintEngineOption engine)
                     cfg.PrintEngine = engine.Value;
+                SaveTraysFromScreen(cfg);
 
                 cfg.Save();
                 SimpleLog.Info($"Config saved: engine='{cfg.PrintEngine}'");
