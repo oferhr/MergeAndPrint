@@ -148,6 +148,13 @@ namespace MergeAndPrint
                 }
                 else
                 {
+                    // A merged run is fully in the print folder; what is left in the working folder are its sources
+                    // (copies are in the archive). Left there, the next run would merge and print them again.
+                    if (pending.Merge && Directory.Exists(workingDir) && Directory.EnumerateFiles(workingDir, "*.*", SearchOption.AllDirectories).Any())
+                    {
+                        Directory.Delete(workingDir, true);
+                        SimpleLog.Info("Unfinished run: removed the already merged sources left in the working folder: " + workingDir);
+                    }
                     var missing = pending.Unprinted.Where(f => !File.Exists(f.Path)).ToList();
                     if (missing.Count > 0)
                         SimpleLog.Warning($"Unfinished run: {missing.Count} unprinted file(s) are no longer in the print folder: " +

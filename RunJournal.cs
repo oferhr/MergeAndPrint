@@ -70,6 +70,10 @@ namespace MergeAndPrint
         [JsonIgnore]
         public string FilePath { get; private set; }
 
+        /// <summary>A save failed even after retrying: later saves try once, so a broken folder does not slow every file by seconds.</summary>
+        [JsonIgnore]
+        public bool SaveFailed { get; private set; }
+
         private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -155,11 +159,14 @@ namespace MergeAndPrint
             Save();
         }
 
+        [JsonIgnore]
         public JournalFile Interrupted => Files.FirstOrDefault(f => f.Status == FileStates.Sending);
 
         /// <summary>Files that still have to be printed (pending, failed, or cut off while sending).</summary>
+        [JsonIgnore]
         public List<JournalFile> Unprinted => Files.Where(f => !f.IsDone).ToList();
 
+        [JsonIgnore]
         public int PrintedCount => Files.Count(f => f.Status == FileStates.Printed);
 
         /// <summary>
@@ -172,21 +179,25 @@ namespace MergeAndPrint
         {
             Updated = DateTime.Now;
             Exception last = null;
-            for (var attempt = 1; attempt <= 15; attempt++)
+            var attempts = SaveFailed ? 1 : 15;
+            for (var attempt = 1; attempt <= attempts; attempt++)
             {
                 try
                 {
                     WriteFile();
                     if (attempt > 1)
                         SimpleLogger.SimpleLog.Info($"Run journal saved on attempt {attempt} (the file was busy): {FilePath}");
+                    SaveFailed = false;
                     return;
                 }
                 catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
                 {
                     last = ex;
-                    System.Threading.Thread.Sleep(200);
+                    if (attempt < attempts)
+                        System.Threading.Thread.Sleep(200);
                 }
             }
+            SaveFailed = true;
             SimpleLogger.SimpleLog.Warning($"Run journal could not be saved (stage '{Stage}'), the run continues: {FilePath}: " +
                 PrinterCheck.Describe(last));
         }

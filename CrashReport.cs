@@ -22,6 +22,8 @@ namespace MergeAndPrint
         private static readonly string Dir =
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MergeAndPrint");
         private static readonly string SessionFile = Path.Combine(Dir, "session.txt");
+        /// <summary>When the event log was last searched, so each crash is copied to the log once.</summary>
+        private static readonly string ScanFile = Path.Combine(Dir, "crash-scan.txt");
 
         private static Mutex _instance;
 
@@ -75,24 +77,32 @@ namespace MergeAndPrint
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
         /// <summary>
-        /// Record this session; if the previous one never reached Shutdown, log that, and look for its crash in the
-        /// Windows event log in the background.
+        /// Record this session; if the previous one never reached Shutdown, log that. Then, in the background, copy
+        /// the app's crash entries from the Windows event log that are new since the last start-up (the first time:
+        /// the last 14 days, so crashes of older versions are reported too).
         /// </summary>
         public static void StartSession(string version)
         {
             try
             {
                 Directory.CreateDirectory(Dir);
-                if (File.Exists(SessionFile))
+                var unclean = File.Exists(SessionFile);
+                if (unclean)
                 {
                     var previous = File.ReadAllText(SessionFile).Trim();
                     SimpleLogger.SimpleLog.Warning("The previous session did not close normally (no Shutdown): " + previous +
                         ". It crashed, or it was ended (Task Manager, sign-out, power).", false);
-                    var since = ParseStarted(previous) ?? DateTime.Now.AddDays(-2);
-                    Task.Run(() => LogWindowsCrashEvents(since));
                 }
+
+                var now = DateTime.Now;
+                var since = now.AddDays(-14);
+                if (File.Exists(ScanFile) && DateTime.TryParse(File.ReadAllText(ScanFile).Trim(), out var lastScan) && lastScan > since)
+                    since = lastScan;
+                File.WriteAllText(ScanFile, now.ToString("yyyy-MM-dd HH:mm:ss"));
+                Task.Run(() => LogWindowsCrashEvents(since, reportNone: unclean));
+
                 File.WriteAllText(SessionFile,
-                    $"process {Environment.ProcessId}, version {version}, started {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+                    $"process {Environment.ProcessId}, version {version}, started {now:yyyy-MM-dd HH:mm:ss}");
             }
             catch (Exception ex)
             {
@@ -112,17 +122,11 @@ namespace MergeAndPrint
             }
         }
 
-        private static DateTime? ParseStarted(string session)
-        {
-            var at = session.LastIndexOf("started ", StringComparison.Ordinal);
-            return at >= 0 && DateTime.TryParse(session.Substring(at + 8), out var started) ? started : (DateTime?)null;
-        }
-
         /// <summary>
         /// Copy the Windows "Application Error", ".NET Runtime", "Application Hang" and "Windows Error Reporting"
         /// entries about MergeAndPrint.exe since <paramref name="since"/> into our log.
         /// </summary>
-        internal static void LogWindowsCrashEvents(DateTime since)
+        internal static void LogWindowsCrashEvents(DateTime since, bool reportNone)
         {
             try
             {
@@ -159,10 +163,11 @@ namespace MergeAndPrint
                         }
                     }
                 }
-                SimpleLogger.SimpleLog.Info(found == 0
-                    ? $"Windows event log: no crash entries for MergeAndPrint since {since:yyyy-MM-dd HH:mm:ss} " +
-                      "(none are written when the app is ended from Task Manager or by sign-out/shut-down)"
-                    : $"Windows event log: {found} crash entr{(found == 1 ? "y" : "ies")} for MergeAndPrint since {since:yyyy-MM-dd HH:mm:ss}");
+                if (found > 0)
+                    SimpleLogger.SimpleLog.Info($"Windows event log: {found} crash entr{(found == 1 ? "y" : "ies")} for MergeAndPrint since {since:yyyy-MM-dd HH:mm:ss}");
+                else if (reportNone)
+                    SimpleLogger.SimpleLog.Info($"Windows event log: no crash entries for MergeAndPrint since {since:yyyy-MM-dd HH:mm:ss} " +
+                        "(none are written when the app is ended from Task Manager or by sign-out/shut-down)");
             }
             catch (Exception ex)
             {

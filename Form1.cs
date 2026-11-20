@@ -723,6 +723,8 @@ namespace MergeAndPrint
                 journal = RunJournal.Begin(num, sdirs, IsMerge, IsMerge ? PrinterFor(num) : Printer9,
                     txtMain.Text, txtWorkFol.Text, txtPrint.Text, txtArchive.Text);
                 SimpleLog.Info("Run journal: " + journal.FilePath);
+                if (journal.SaveFailed)
+                    logToScreen("אזהרה: לא ניתן לשמור את מצב ההדפסה, ואם התוכנה תיסגר באמצע לא יהיה אפשר להמשיך ממקום העצירה - " + journal.FilePath);
 
                 var stage = Stopwatch.StartNew();
                 logToScreen("מתחיל בתהליך");
@@ -799,6 +801,12 @@ namespace MergeAndPrint
 
             logToScreen("מתחיל הדפסת הקבצים");
             journal.SetFilesToPrint(files);
+            if (isMerge)
+            {
+                // Everything is merged into the print folder and recorded; the sources are no longer needed.
+                Directory.Delete(txtWorkFol.Text, true);
+                Directory.CreateDirectory(txtWorkFol.Text);
+            }
             if (files.Length == 0)
                 ReportEmptyBatch();
             PrintJournalFiles();
@@ -1302,8 +1310,8 @@ namespace MergeAndPrint
                         }
                     }
                 }
-                Directory.Delete(txtWorkFol.Text, true);
-                Directory.CreateDirectory(txtWorkFol.Text);
+                // The working folder is emptied by ProcessWorkingFolder once the journal lists the merged files:
+                // emptied here, a crash in between would leave the run looking unmerged with half its sources gone.
                 return true;
             }
             catch (Exception ex)
