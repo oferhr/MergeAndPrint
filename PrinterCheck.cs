@@ -72,7 +72,7 @@ namespace MergeAndPrint
             }
             catch (Exception ex)
             {
-                SimpleLog.Warning("Printer check failed: " + ex.Message);
+                SimpleLog.Warning("Printer check failed: " + Describe(ex));
             }
         }
 
@@ -84,14 +84,51 @@ namespace MergeAndPrint
             }
             catch (Exception ex)
             {
-                return new Result { Verdict = Verdict.Unknown, Text = "check failed: " + ex.Message + " -> UNKNOWN" };
+                return new Result { Verdict = Verdict.Unknown, Text = "check failed: " + Describe(ex) + " -> UNKNOWN" };
+            }
+        }
+
+        /// <summary>
+        /// An exception for the log: its type, WMI error code or HRESULT, and message. Some WMI failures have an
+        /// empty message, which left the log saying only "check failed:".
+        /// </summary>
+        internal static string Describe(Exception ex)
+        {
+            while ((ex is AggregateException || ex is System.Reflection.TargetInvocationException) && ex.InnerException != null)
+                ex = ex.InnerException;
+            var code = ex is ManagementException wmi
+                ? $"WMI {wmi.ErrorCode} (0x{(uint)wmi.ErrorCode:X8})"
+                : $"0x{(uint)ex.HResult:X8}";
+            var message = string.IsNullOrWhiteSpace(ex.Message) ? "no message" : ex.Message.Trim();
+            return $"{ex.GetType().Name} {code}: {message}";
+        }
+
+        /// <summary>The printer's port, server and driver from Windows. WMI is retried once: all printers are checked at the same time.</summary>
+        private static ManagementBaseObject ReadPrinterInfo(string printer)
+        {
+            var query = "SELECT PortName, ServerName, ShareName, DriverName FROM Win32_Printer WHERE Name = '" + Escape(printer) + "'";
+            try
+            {
+                return QueryWmi(null, query).FirstOrDefault();
+            }
+            catch (Exception first)
+            {
+                System.Threading.Thread.Sleep(1000);
+                try
+                {
+                    return QueryWmi(null, query).FirstOrDefault();
+                }
+                catch (Exception second)
+                {
+                    throw new InvalidOperationException(
+                        $"reading the printer from Windows (WMI) failed twice: {Describe(first)}; then {Describe(second)}", second);
+                }
             }
         }
 
         private static Result Check(string printer)
         {
-            var info = QueryWmi(null, "SELECT PortName, ServerName, ShareName, DriverName FROM Win32_Printer WHERE Name = '"
-                + Escape(printer) + "'").FirstOrDefault();
+            var info = ReadPrinterInfo(printer);
             if (info == null)
                 return new Result { Verdict = Verdict.Unknown, Text = "not found in Windows -> UNKNOWN" };
 
@@ -168,7 +205,7 @@ namespace MergeAndPrint
                 }
                 catch (Exception ex)
                 {
-                    notes.Add($"{(machine ?? "this PC")}: {ex.Message.Trim()}");
+                    notes.Add($"{(machine ?? "this PC")}: {Describe(ex)}");
                 }
             }
 
