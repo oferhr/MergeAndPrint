@@ -43,10 +43,21 @@ namespace MergeAndPrint
                 ? AppContext.BaseDirectory
                 : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MergeAndPrint");
             SimpleLogger.SimpleLog.SetLogDir(logDir, true);
+            var version = FileVersionInfo.GetVersionInfo(Environment.ProcessPath ?? "").FileVersion;
             SimpleLogger.SimpleLog.Info(string.Format(
-                "Startup: MergeAndPrint {0}, user {1}, machine {2}, exe dir {3}, log dir {4}, config {5}",
-                FileVersionInfo.GetVersionInfo(Environment.ProcessPath ?? "").FileVersion,
-                Environment.UserName, Environment.MachineName, AppContext.BaseDirectory, logDir, AppConfig.FilePath));
+                "Startup: MergeAndPrint {0}, process {6}, user {1}, machine {2}, exe dir {3}, log dir {4}, config {5}",
+                version, Environment.UserName, Environment.MachineName, AppContext.BaseDirectory, logDir, AppConfig.FilePath,
+                Environment.ProcessId));
+
+            // Two copies would share the same folders and the same unfinished run, and print letters twice.
+            if (!CrashReport.TryBecomeSingleInstance())
+            {
+                SimpleLogger.SimpleLog.Warning("Another copy of MergeAndPrint is already running; this copy closes", false);
+                MessageBox.Show("התוכנה כבר פתוחה. יש לעבוד בחלון הפתוח.", "MergeAndPrint",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            CrashReport.StartSession(version);
             try
             {
                 _ = AppConfig.Current;
@@ -56,6 +67,7 @@ namespace MergeAndPrint
                 MessageBox.Show("טעינת ההגדרות נכשלה. יש לתקן את הקובץ ולהפעיל מחדש את התוכנה:" + Environment.NewLine
                     + AppConfig.FilePath + Environment.NewLine + ex.Message, "שגיאה בטעינת הגדרות",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CrashReport.EndSession();
                 return;
             }
 
@@ -64,6 +76,7 @@ namespace MergeAndPrint
             Warmup.Start();
             Application.Run(new Form1());
             SimpleLogger.SimpleLog.Info("Shutdown");
+            CrashReport.EndSession();
         }
 
         private static void LogFatal(string what, Exception ex)
