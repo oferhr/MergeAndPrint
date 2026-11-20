@@ -72,6 +72,8 @@ namespace MergeAndPrint
 
             updateScreen();
             updateDirectories();
+            // After the window is on screen: a run that did not finish (crash, app closed) is offered to continue.
+            Shown += (s, e) => BeginInvoke(new Action(CheckUnfinishedRunAtStartup));
         }
         /// <summary>
         /// טעינת ההגדרות מקובץ config.json אל מסך הקונפיגורציה.
@@ -702,22 +704,13 @@ namespace MergeAndPrint
             {
                 return;
             }
-            _running = true;
-            printFailures = 0;
-            nothingToPrint = false;
-            runStopwatch = Stopwatch.StartNew();
-            SimpleLog.Info($"Run started: folder='{num}', merge={IsMerge}, printer='{PrinterFor(num)}', " +
+            // A run that did not finish (crash, app closed) is dealt with before anything new touches the folders.
+            if (!ResolveUnfinishedRun())
+            {
+                return;
+            }
+            BeginRun($"Run started: folder='{num}', merge={IsMerge}, printer='{(IsMerge ? PrinterFor(num) : Printer9)}', " +
                 (sdirs == null ? "all suppliers" : "selected=[" + string.Join(", ", sdirs) + "]"));
-            btnPrint.Enabled = false;
-            btn1.Enabled = false;
-            btn2.Enabled = false;
-            btn3.Enabled = false;
-            btn11.Enabled = false;
-            btn22.Enabled = false;
-            btn33.Enabled = false;
-            btn9.Enabled = false;
-            btnReset.Enabled = false;
-            chbox1.Enabled = false;
 
             try
             {
@@ -727,6 +720,11 @@ namespace MergeAndPrint
                 if (Directory.Exists(txtPrint.Text))
                     Directory.Delete(txtPrint.Text, true);
                 Directory.CreateDirectory(txtPrint.Text);
+                journal = RunJournal.Begin(num, sdirs, IsMerge, IsMerge ? PrinterFor(num) : Printer9,
+                    txtMain.Text, txtWorkFol.Text, txtPrint.Text, txtArchive.Text);
+                SimpleLog.Info("Run journal: " + journal.FilePath);
+                if (journal.SaveFailed)
+                    logToScreen("אזהרה: לא ניתן לשמור את מצב ההדפסה, ואם התוכנה תיסגר באמצע לא יהיה אפשר להמשיך ממקום העצירה - " + journal.FilePath);
 
                 var stage = Stopwatch.StartNew();
                 logToScreen("מתחיל בתהליך");
@@ -734,33 +732,13 @@ namespace MergeAndPrint
                 archive(num, sdirs);
                 LogStage("archive copy", stage);
                 logToScreen("מעתיק קבצים לתקיה זמנית...");
+                journal.SetStage(RunJournal.Stages.Copy);
                 SendToWorkingFolder(num, sdirs);
                 LogStage("copy to working folder", stage);
-                if (IsMerge)
+                if (!ProcessWorkingFolder(num, sdirs, IsMerge, stage))
                 {
-                    logToScreen("מתחיל בהמרת הקבצים...");
-                    if (!Convert(num, sdirs))
-                    {
-                        FailRun();
-                        return;
-                    }
-                    LogStage("convert", stage);
-                    logToScreen("מתחיל באיחוד הקבצים");
-                    if (!Merge(num, sdirs))
-                    {
-                        FailRun();
-                        return;
-                    }
-                    LogStage("merge", stage);
-                    logToScreen("מתחיל הדפסת הקבצים");
-                    Print(num);
-                    LogStage("print (incl. 1 s pause per file)", stage);
-                }
-                else
-                {
-                    logToScreen("מתחיל הדפסת הקבצים");
-                    printNoMerge(num, sdirs);
-                    LogStage("print (incl. 1 s pause per file)", stage);
+                    FailRun();
+                    return;
                 }
             }
             catch (Exception ex)
@@ -771,6 +749,91 @@ namespace MergeAndPrint
                 return;
             }
 
+            FinishPrinting();
+        }
+
+        /// <summary>Lock the screen for a run and reset its counters.</summary>
+        private void BeginRun(string logLine)
+        {
+            _running = true;
+            printFailures = 0;
+            nothingToPrint = false;
+            runStopwatch = Stopwatch.StartNew();
+            SimpleLog.Info(logLine);
+            btnPrint.Enabled = false;
+            btn1.Enabled = false;
+            btn2.Enabled = false;
+            btn3.Enabled = false;
+            btn11.Enabled = false;
+            btn22.Enabled = false;
+            btn33.Enabled = false;
+            btn9.Enabled = false;
+            btnReset.Enabled = false;
+            chbox1.Enabled = false;
+        }
+
+        /// <summary>
+        /// From the working folder to paper: convert and merge (or, for Shlomo's folder, move the files as they are)
+        /// into the print folder, list them in the journal, and print them.
+        /// </summary>
+        private bool ProcessWorkingFolder(string num, List<string> sdirs, bool isMerge, Stopwatch stage)
+        {
+            string[] files;
+            if (isMerge)
+            {
+                logToScreen("מתחיל בהמרת הקבצים...");
+                journal.SetStage(RunJournal.Stages.Convert);
+                if (!Convert(num, sdirs))
+                    return false;
+                LogStage("convert", stage);
+                logToScreen("מתחיל באיחוד הקבצים");
+                journal.SetStage(RunJournal.Stages.Merge);
+                if (!Merge(num, sdirs))
+                    return false;
+                LogStage("merge", stage);
+                files = Directory.GetFiles(txtPrint.Text, "*.pdf", SearchOption.TopDirectoryOnly);
+            }
+            else
+            {
+                MoveWorkingToPrint(num, sdirs);
+                files = Directory.GetFiles(txtPrint.Text, "*.*", SearchOption.TopDirectoryOnly);
+            }
+
+            logToScreen("מתחיל הדפסת הקבצים");
+            journal.SetFilesToPrint(files);
+            if (isMerge)
+            {
+                // Everything is merged into the print folder and recorded; the sources are no longer needed.
+                Directory.Delete(txtWorkFol.Text, true);
+                Directory.CreateDirectory(txtWorkFol.Text);
+            }
+            if (files.Length == 0)
+                ReportEmptyBatch();
+            PrintJournalFiles();
+            LogStage("print (incl. 1 s pause per file)", stage);
+            return true;
+        }
+
+        /// <summary>
+        /// The print stage is over: a journal with every file printed is deleted; one with failed files stays,
+        /// so the next run offers to print them again instead of deleting them with the print folder.
+        /// </summary>
+        private void FinishPrinting()
+        {
+            if (journal != null)
+            {
+                var left = journal.Unprinted;
+                if (left.Count == 0)
+                {
+                    journal.Delete();
+                }
+                else
+                {
+                    SimpleLog.Warning($"Run left {left.Count} unprinted file(s) in the print folder; the next run offers to print them: " +
+                        string.Join(", ", left.Select(f => Path.GetFileName(f.Path))));
+                }
+                journal = null;
+            }
             logToScreen("ממתין לספירה לאחור להסתיים");
             CountDown();
             updateDirectories();
@@ -785,7 +848,7 @@ namespace MergeAndPrint
 
         /// <summary>
         /// A run stopped part-way: tell the user and re-enable Refresh so the app isn't left locked.
-        /// Working/print folders are left as they are for inspection; Refresh cleans up and re-enables the buttons.
+        /// Working/print folders are left as they are, and the journal stays, so the next run offers to continue.
         /// </summary>
         private void FailRun()
         {
@@ -794,13 +857,20 @@ namespace MergeAndPrint
             btnPrint.Enabled = true;
             chbox1.Enabled = true;
             _running = false;
-            SimpleLog.Error($"Run FAILED after {runStopwatch.Elapsed.TotalSeconds:0}s; working/print folders left for inspection");
-            MessageBox.Show("הפעולה נכשלה, יש לבחון קובץ לוג");
+            var kept = journal != null && File.Exists(journal.FilePath);
+            journal = null;
+            SimpleLog.Error($"Run FAILED after {runStopwatch.Elapsed.TotalSeconds:0}s; working/print folders left for inspection" +
+                (kept ? "; the run journal is kept so it can be continued" : ""));
+            MessageBox.Show("הפעולה נכשלה, יש לבחון קובץ לוג" +
+                (kept ? Environment.NewLine + "בהדפסה הבאה תוצע אפשרות להמשיך או לבטל את ההפעלה הזו." : ""));
         }
 
-        private void printNoMerge(string num, List<string> sdirs)
+        /// <summary>Shlomo's folder: the files go to the print folder as they are, without converting or merging.</summary>
+        private void MoveWorkingToPrint(string num, List<string> sdirs)
         {
             var workingDir = Path.Combine(txtWorkFol.Text, num);
+            if (!Directory.Exists(workingDir))
+                return;
             // With a selection, take only the selected suppliers' folders: leftovers from an earlier
             // failed run in the working folder must not be printed along with them.
             var lwFiles = sdirs == null
@@ -813,47 +883,78 @@ namespace MergeAndPrint
             {
                 File.Move(file, Path.Combine(txtPrint.Text, Path.GetFileName(file)));
             }
+        }
 
-
-            var printingDir = txtPrint.Text;
-            var lFiles = Directory.GetFiles(printingDir, "*.*", SearchOption.TopDirectoryOnly);
-            if (lFiles.Length == 0)
-                ReportEmptyBatch();
-
-            foreach (var file in lFiles)
+        /// <summary>
+        /// Print every file of the journal that is not done yet, recording each step before it happens:
+        /// "sending" before the file goes to the printer, "printed" after. If the app dies, the journal says
+        /// exactly which file it was on.
+        /// </summary>
+        private void PrintJournalFiles()
+        {
+            var files = journal.Files;
+            for (var i = 0; i < files.Count; i++)
             {
-                var ext = Path.GetExtension(file).TrimStart('.').ToLowerInvariant();
+                var entry = files[i];
+                if (entry.IsDone)
+                    continue;
+                var file = entry.Path;
                 logToScreen("מדפיס קובץ  - " + Path.GetFileName(file));
                 Application.DoEvents();
+                if (!File.Exists(file))
+                {
+                    journal.SetStatus(entry, RunJournal.FileStates.Failed);
+                    ReportPrintFailure(file, new FileNotFoundException("The file to print is no longer in the print folder", file));
+                    continue;
+                }
+
+                journal.SetStatus(entry, RunJournal.FileStates.Sending);
+                // Written straight to disk (not queued), so it is in the log even if the app dies inside the printer driver.
+                SimpleLog.Info($"Sending file {i + 1} of {files.Count}: {file}", false);
+                bool printed;
                 try
                 {
-                    if (ext == "pdf")
-                    {
-                        PrintPdf(file, Printer9);
-                    }
-                    else if (ext == "jpeg" || ext == "jpg" || ext == "tif" || ext == "tiff")
-                    {
-                        PrintImage(file);
-                        SimpleLog.Info($"Printed image ({pages} page(s)) to '{Printer9}': {file}");
-                    }
-                    else if (BlockedExtensions.Contains(ext))
-                    {
-                        throw new InvalidOperationException("Refusing to print a program/script file: " + file);
-                    }
-                    else
-                    {
-                        PrintFile(file);
-                        SimpleLog.Info($"Sent to the shell print handler for '{Printer9}': {file}");
-                    }
+                    PrintOne(file);
+                    printed = true;
                 }
                 catch (Exception ex)
                 {
+                    printed = false;
+                    journal.SetStatus(entry, RunJournal.FileStates.Failed);
                     ReportPrintFailure(file, ex);
                 }
-                finally
-                {
-                    Thread.Sleep(1000);
-                }
+                if (printed)
+                    journal.SetStatus(entry, RunJournal.FileStates.Printed);
+                Thread.Sleep(1000);
+            }
+        }
+
+        /// <summary>One file of the run, to the folder's printer (Shlomo's folder: PDF, image or the shell's print handler).</summary>
+        private void PrintOne(string file)
+        {
+            if (journal.Merge)
+            {
+                PrintPdf(file, PrinterFor(journal.Folder));
+                return;
+            }
+            var ext = Path.GetExtension(file).TrimStart('.').ToLowerInvariant();
+            if (ext == "pdf")
+            {
+                PrintPdf(file, Printer9);
+            }
+            else if (ext == "jpeg" || ext == "jpg" || ext == "tif" || ext == "tiff")
+            {
+                PrintImage(file);
+                SimpleLog.Info($"Printed image ({pages} page(s)) to '{Printer9}': {file}");
+            }
+            else if (BlockedExtensions.Contains(ext))
+            {
+                throw new InvalidOperationException("Refusing to print a program/script file: " + file);
+            }
+            else
+            {
+                PrintFile(file);
+                SimpleLog.Info($"Sent to the shell print handler for '{Printer9}': {file}");
             }
         }
 
@@ -895,6 +996,12 @@ namespace MergeAndPrint
             btnPrint.Enabled = true;
             chbox1.Enabled = true;
             timerCounter = ParseTimer(timeVal);
+            if (HasUnfinishedRun())
+            {
+                // Its unprinted letters are in the print folder; the user decides first (see ResolveUnfinishedRun).
+                SimpleLog.Info("Refresh: print folder kept, a run that did not finish is waiting for a decision");
+                return;
+            }
             try
             {
                 if (Directory.Exists(txtPrint.Text))
@@ -935,7 +1042,8 @@ namespace MergeAndPrint
                     (printFailures > 0 ? $"{printFailures} print error(s)" : nothingToPrint ? "nothing to print" : "success"));
                 updateScreen();
                 if (printFailures > 0)
-                    MessageBox.Show("הפעולה הסתיימה עם " + printFailures + " שגיאות הדפסה, יש לבחון קובץ לוג");
+                    MessageBox.Show("הפעולה הסתיימה עם " + printFailures + " שגיאות הדפסה, יש לבחון קובץ לוג" + Environment.NewLine +
+                        "הקבצים שלא הודפסו נשמרו, ובהדפסה הבאה תוצע הדפסה חוזרת שלהם.");
                 else if (nothingToPrint)
                     MessageBox.Show("לא נמצאו קבצים להדפסה בתיקייה שנבחרה.", "אין מה להדפיס",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1202,8 +1310,8 @@ namespace MergeAndPrint
                         }
                     }
                 }
-                Directory.Delete(txtWorkFol.Text, true);
-                Directory.CreateDirectory(txtWorkFol.Text);
+                // The working folder is emptied by ProcessWorkingFolder once the journal lists the merged files:
+                // emptied here, a crash in between would leave the run looking unmerged with half its sources gone.
                 return true;
             }
             catch (Exception ex)
@@ -1236,35 +1344,6 @@ namespace MergeAndPrint
                 case "2_999": return Printer22;
                 case "3_999": return Printer33;
                 default: return num == ShlomoName ? Printer9 : Printer1;
-            }
-        }
-
-        private void Print(string num)
-        {
-            var printingDir = txtPrint.Text;
-            var lFiles = Directory.GetFiles(printingDir, "*.pdf", SearchOption.TopDirectoryOnly);
-            if (lFiles.Length == 0)
-                ReportEmptyBatch();
-
-            foreach (var file in lFiles)
-            {
-                try
-                {
-                    var pprint = PrinterFor(num);
-                    logToScreen("מדפיס קובץ  - " + Path.GetFileName(file));
-                    Application.DoEvents();
-                    PrintPdf(file, pprint);
-
-                    Thread.Sleep(1000);
-                    //var doc = pdf.GetPrintDocument();
-                    //doc.EndPrint += Doc_EndPrint;
-                    //doc.PrinterSettings.PrinterName = num == "1" ? Printer1 : num == "2" ? Printer2 : Printer3;
-                    //doc.Print();
-                }
-                catch (Exception ex)
-                {
-                    ReportPrintFailure(file, ex);
-                }
             }
         }
 
@@ -1469,6 +1548,7 @@ namespace MergeAndPrint
             if (sdirs == null)
             {
                 CopyFolder(diSource, diTarget, false);
+                journal?.SetStage(RunJournal.Stages.Copied);
                 DelSource(num);
             }
             else
@@ -1479,6 +1559,7 @@ namespace MergeAndPrint
                     diTarget = new DirectoryInfo(Path.Combine(baseTarget, dir));
                     CopyFolder(diSource, diTarget, false);
                 }
+                journal?.SetStage(RunJournal.Stages.Copied);
                 DelSource(num, sdirs);
             }
 
